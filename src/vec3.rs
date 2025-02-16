@@ -130,6 +130,25 @@ impl ops::IndexMut<u8> for Vec3 {
     }
 }
 
+impl ops::Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        let x = self.x * rhs.x;
+        let y = self.y * rhs.y;
+        let z = self.z * rhs.z;
+        Vec3::new(x, y, z)
+    }
+}
+
+impl ops::MulAssign<Vec3> for Vec3 {
+    fn mul_assign(&mut self, rhs: Vec3) {
+        self.x = self.x * rhs.x;
+        self.y = self.y * rhs.y;
+        self.z = self.z * rhs.z;
+    }
+}
+
 impl ops::Mul<f64> for Vec3 {
     type Output = Vec3;
 
@@ -245,14 +264,30 @@ mod tests {
     }
 
     #[test]
-    fn test_mult() {
+    fn test_mult_vec3() {
+        let a = Vec3::inew(1, 2, 3);
+        let b = Vec3::inew(2, 4, 6);
+        let c = a * b;
+        assert_eq!(c, Vec3::inew(2, 8, 18));
+    }
+
+    #[test]
+    fn test_mult_vec3_assign() {
+        let mut a = Vec3::inew(1, 2, 3);
+        let b = Vec3::inew(2, 4, 6);
+        a *= b;
+        assert_eq!(a, Vec3::inew(2, 8, 18));
+    }
+
+    #[test]
+    fn test_mult_f64() {
         let a = Vec3::inew(1, 2, 3);
         let b = a * 2.0;
         assert_eq!(b, Vec3::inew(2, 4, 6));
     }
 
     #[test]
-    fn test_mult_assign() {
+    fn test_mult_f64_assign() {
         let mut a = Vec3::inew(1, 2, 3);
         a *= 2.0;
         assert_eq!(a, Vec3::inew(2, 4, 6));

@@ -3,18 +3,16 @@ use std::ops;
 pub type Color = Vec3;
 pub type Point3 = Vec3;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec3 {
-    x: f64,
-    y: f64,
-    z: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
-        let result = Vec3 { x, y, z };
-        result.validate();
-        return result;
+        Vec3 { x, y, z }
     }
 
     fn validate(self) {
@@ -68,12 +66,6 @@ impl Vec3 {
 impl std::fmt::Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{} {} {}", self.x, self.y, self.z)
-    }
-}
-
-impl PartialEq for Vec3 {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.x == rhs.x && self.y == rhs.y && self.z == rhs.z
     }
 }
 
@@ -217,7 +209,6 @@ impl ops::DivAssign<f64> for Vec3 {
         self.x = self.x / rhs;
         self.y = self.y / rhs;
         self.z = self.z / rhs;
-        self.validate();
     }
 }
 
@@ -227,15 +218,24 @@ mod tests {
     use crate::test::assert;
 
     #[test]
+    fn test_mut_field() {
+        let mut a = Vec3::new(1.0, 2.0, 3.0);
+        a.y = 20.0;
+        assert_eq!(a, Vec3::new(1.0, 20.0, 3.0));
+    }
+
+    #[test]
     #[should_panic(expected = "non-finite values not allowed")]
     fn test_infinity() {
-        Vec3::new(f64::INFINITY, 0.0, 0.0);
+        let a = Vec3::new(f64::INFINITY, 0.0, 0.0);
+        a.validate();
     }
 
     #[test]
     #[should_panic(expected = "non-finite values not allowed")]
     fn test_nan() {
-        Vec3::new(f64::NAN, 0.0, 0.0);
+        let a = Vec3::new(f64::NAN, 0.0, 0.0);
+        a.validate();
     }
 
     #[test]
@@ -352,6 +352,7 @@ mod tests {
     fn test_div_nan() {
         let mut a = Vec3::inew(2, 4, 8);
         a /= 0.0;
+        a.validate();
     }
 
     #[test]

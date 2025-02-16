@@ -3,6 +3,7 @@ use crate::vec3::Vec3;
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color(Vec3);
+
 impl Color {
     pub(crate) fn new(rf: f64, gf: f64, bf: f64) -> Self {
         Color(Vec3::new(rf, gf, bf))
@@ -23,5 +24,16 @@ impl std::fmt::Display for Color {
         let b = (255.999 * self.z()) as u32;
 
         write!(f, "{} {} {}", r, g, b)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_display() {
+        let a = Color::new(0.0, 1.0, 0.5);
+        assert_eq!(format!("{a}"), "0 255 127");
     }
 }

@@ -63,15 +63,11 @@ impl Vec3 {
     pub fn unit(self) -> Vec3 {
         self / self.length()
     }
-
-    pub fn to_string(self) -> String {
-        format!("{} {} {}", self.x, self.y, self.z)
-    }
 }
 
 impl std::fmt::Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{} {} {}", self.x, self.y, self.z)
     }
 }
 
@@ -175,6 +171,17 @@ impl ops::MulAssign<Vec3> for Vec3 {
     }
 }
 
+impl ops::Mul<Vec3> for f64 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        let x = rhs.x * self;
+        let y = rhs.y * self;
+        let z = rhs.z * self;
+        Vec3::new(x, y, z)
+    }
+}
+
 impl ops::Mul<f64> for Vec3 {
     type Output = Vec3;
 
@@ -214,10 +221,10 @@ impl ops::DivAssign<f64> for Vec3 {
     }
 }
 
-// tests
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test::assert;
 
     #[test]
     #[should_panic(expected = "non-finite values not allowed")]
@@ -313,6 +320,13 @@ mod tests {
     }
 
     #[test]
+    fn test_mult_f64_reverse() {
+        let a = Vec3::inew(1, 2, 3);
+        let b = 2.0 * a;
+        assert_eq!(b, Vec3::inew(2, 4, 6));
+    }
+
+    #[test]
     fn test_mult_f64_assign() {
         let mut a = Vec3::inew(1, 2, 3);
         a *= 2.0;
@@ -349,7 +363,7 @@ mod tests {
     #[test]
     fn test_length() {
         let a = Vec3::inew(2, 2, 2);
-        assert_float(a.length(), 3.464, 3);
+        assert::float(a.length(), 3.464, 3);
     }
 
     #[test]
@@ -372,19 +386,8 @@ mod tests {
     fn test_unit() {
         let a = Vec3::inew(2, 4, 6);
         let result = a.unit();
-        assert_float(result.x, 0.2672612, 5);
-        assert_float(result.y, 0.5345224, 5);
-        assert_float(result.z, 0.8017837, 5);
-    }
-
-    fn assert_float(a: f64, b: f64, digits: i32) {
-        let epsilon = 0.1_f64.powi(digits);
-        assert!(
-            (a - b).abs() < epsilon,
-            "assertion failed: got {}, expected {} (epsilon: {})",
-            a,
-            b,
-            epsilon
-        );
+        assert::float(result.x, 0.2672612, 5);
+        assert::float(result.y, 0.5345224, 5);
+        assert::float(result.z, 0.8017837, 5);
     }
 }

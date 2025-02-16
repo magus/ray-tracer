@@ -47,6 +47,32 @@ impl Vec3 {
     pub fn length(self) -> f64 {
         self.length_squared().sqrt()
     }
+
+    pub fn dot(self, v: Vec3) -> f64 {
+        self.x * v.x + self.y * v.y + self.z * v.z
+    }
+
+    pub fn cross(self, v: Vec3) -> Vec3 {
+        Vec3::new(
+            self.y * v.z - self.z * v.y,
+            self.z * v.x - self.x * v.z,
+            self.x * v.y - self.y * v.x,
+        )
+    }
+
+    pub fn unit(self) -> Vec3 {
+        self / self.length()
+    }
+
+    pub fn to_string(self) -> String {
+        format!("{} {} {}", self.x, self.y, self.z)
+    }
+}
+
+impl std::fmt::Display for Vec3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
 }
 
 impl PartialEq for Vec3 {
@@ -323,10 +349,42 @@ mod tests {
     #[test]
     fn test_length() {
         let a = Vec3::inew(2, 2, 2);
-        assert_float(a.length(), 3.464, 0.001);
+        assert_float(a.length(), 3.464, 3);
     }
 
-    fn assert_float(a: f64, b: f64, epsilon: f64) {
-        assert!((a - b).abs() < epsilon);
+    #[test]
+    fn test_dot() {
+        let a = Vec3::inew(1, 2, 3);
+        let b = Vec3::inew(2, 4, 6);
+        let result = a.dot(b);
+        assert_eq!(result, 28.0);
+    }
+
+    #[test]
+    fn test_cross() {
+        let a = Vec3::inew(1, 3, 6);
+        let b = Vec3::inew(2, 4, 6);
+        let result = a.cross(b);
+        assert_eq!(result, Vec3::inew(-6, 6, -2));
+    }
+
+    #[test]
+    fn test_unit() {
+        let a = Vec3::inew(2, 4, 6);
+        let result = a.unit();
+        assert_float(result.x, 0.2672612, 5);
+        assert_float(result.y, 0.5345224, 5);
+        assert_float(result.z, 0.8017837, 5);
+    }
+
+    fn assert_float(a: f64, b: f64, digits: i32) {
+        let epsilon = 0.1_f64.powi(digits);
+        assert!(
+            (a - b).abs() < epsilon,
+            "assertion failed: got {}, expected {} (epsilon: {})",
+            a,
+            b,
+            epsilon
+        );
     }
 }

@@ -1,3 +1,5 @@
+use crate::color::Color;
+
 /// https://en.wikipedia.org/wiki/Netpbm
 /// Portable PixMap (P3)
 ///
@@ -30,9 +32,9 @@
 pub fn v3() {}
 
 pub fn demo() {
-    let aspect_ratio = 16 / 9;
+    let aspect_ratio = 16.0 / 9.0;
     let height = 256;
-    let width = height * aspect_ratio;
+    let width = (height as f64 * aspect_ratio) as u32;
 
     let max_value = 255;
 
@@ -44,10 +46,13 @@ pub fn demo() {
         eprint!("saving {}/{height}\r", y + 1);
 
         for x in 0..width {
-            let r = (x as f64 / (width - 1) as f64) * max_value as f64;
-            let g = 0;
-            let b = (y as f64 / (height - 1) as f64) * 255.0 as f64;
-            println!("{r} {g} {b}");
+            let pixel = Color::new(
+                x as f64 / (width - 1) as f64,
+                0.0,
+                y as f64 / (height - 1) as f64,
+            );
+
+            println!("{pixel}");
         }
     }
 

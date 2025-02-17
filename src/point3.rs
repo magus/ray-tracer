@@ -5,7 +5,7 @@ use crate::vec3::Vec3;
 pub struct Point3(Vec3);
 
 impl Point3 {
-    pub(crate) fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Point3(Vec3::new(x, y, z))
     }
 }
@@ -23,6 +23,18 @@ impl std::fmt::Display for Point3 {
     }
 }
 
+impl From<Point3> for Vec3 {
+    fn from(p: Point3) -> Self {
+        p.0
+    }
+}
+
+impl From<Vec3> for Point3 {
+    fn from(v: Vec3) -> Self {
+        Point3(v)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -31,5 +43,19 @@ mod tests {
     fn test_display() {
         let a = Point3::new(1.0, 2.0, 3.0);
         assert_eq!(format!("{a}"), "(1, 2, 3)");
+    }
+
+    #[test]
+    fn test_from_point3() {
+        let a = Point3::new(1.0, 2.0, 3.0);
+        let b = Vec3::from(a);
+        assert_eq!(b, Vec3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_from_vec3() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Point3::from(a);
+        assert_eq!(b, Point3::new(1.0, 2.0, 3.0));
     }
 }

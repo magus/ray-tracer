@@ -43,11 +43,11 @@ impl Vec3 {
         self.length_squared().sqrt()
     }
 
-    pub fn dot(self, v: Vec3) -> f64 {
+    pub fn dot(self, v: &Vec3) -> f64 {
         self.x * v.x + self.y * v.y + self.z * v.z
     }
 
-    pub fn cross(self, v: Vec3) -> Vec3 {
+    pub fn cross(self, v: &Vec3) -> Vec3 {
         Vec3::new(
             self.y * v.z - self.z * v.y,
             self.z * v.x - self.x * v.z,
@@ -368,7 +368,7 @@ mod tests {
     fn test_dot() {
         let a = Vec3::inew(1, 2, 3);
         let b = Vec3::inew(2, 4, 6);
-        let result = a.dot(b);
+        let result = a.dot(&b);
         assert_eq!(result, 28.0);
     }
 
@@ -376,7 +376,7 @@ mod tests {
     fn test_cross() {
         let a = Vec3::inew(1, 3, 6);
         let b = Vec3::inew(2, 4, 6);
-        let result = a.cross(b);
+        let result = a.cross(&b);
         assert_eq!(result, Vec3::inew(-6, 6, -2));
     }
 

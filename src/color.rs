@@ -29,7 +29,13 @@ impl std::fmt::Display for Color {
 
 impl From<Color> for Vec3 {
     fn from(c: Color) -> Self {
-        c.0
+        *c
+    }
+}
+
+impl From<&Color> for Vec3 {
+    fn from(c: &Color) -> Self {
+        **c
     }
 }
 

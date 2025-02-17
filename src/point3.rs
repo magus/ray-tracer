@@ -25,7 +25,13 @@ impl std::fmt::Display for Point3 {
 
 impl From<Point3> for Vec3 {
     fn from(p: Point3) -> Self {
-        p.0
+        *p
+    }
+}
+
+impl From<&Point3> for Vec3 {
+    fn from(p: &Point3) -> Self {
+        **p
     }
 }
 

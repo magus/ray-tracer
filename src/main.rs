@@ -67,13 +67,18 @@ fn main() {
 
 // circle hit test relies on observation that equation of sphere can be rewritten as dot product
 // https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/ray-sphereintersection
-fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> bool {
+fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> f64 {
     let oc = Vec3::from(center) - Vec3::from(ray.origin());
     let a = ray.direction().dot(ray.direction());
     let b = -2.0 * ray.direction().dot(&oc);
     let c = oc.dot(&oc) - radius * radius;
     let discriminant = b * b - 4.0 * a * c;
-    return discriminant >= 0.0;
+
+    if discriminant < 0.0 {
+        return -1.0;
+    }
+
+    return (-b - discriminant.sqrt()) / (2.0 * a);
 }
 
 fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
@@ -81,8 +86,14 @@ fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
 }
 
 fn ray_color(ray: Ray) -> Color {
-    if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, ray) {
-        return Color::new(1.0, 0.0, 0.0);
+    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, ray);
+
+    if t > 0.0 {
+        let normal = Vec3::from(ray.at(t)) - Vec3::new(0.0, 0.0, -1.0);
+        let n = normal.unit();
+        // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
+        let normal_01 = 0.5 * Vec3::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
+        return Color::from(normal_01);
     }
 
     let unit_direction = ray.direction().unit();

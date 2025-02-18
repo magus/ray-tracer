@@ -41,6 +41,16 @@ impl Interval {
     pub fn surrounds(&self, x: f64) -> bool {
         self.min < x && x < self.max
     }
+
+    pub fn clamp(&self, x: f64) -> f64 {
+        if x < self.min {
+            self.min
+        } else if x > self.max {
+            self.max
+        } else {
+            x
+        }
+    }
 }
 
 #[cfg(test)]
@@ -88,5 +98,13 @@ mod tests {
         assert!(!i.surrounds(-4.0));
         assert!(i.surrounds(3.4));
         assert!(!i.surrounds(6.0));
+    }
+
+    #[test]
+    fn test_clamp() {
+        let i = Interval::new(-4.0, 6.0);
+        assert_eq!(i.clamp(-5.0), -4.0);
+        assert_eq!(i.clamp(3.4), 3.4);
+        assert_eq!(i.clamp(10.0), 6.0);
     }
 }

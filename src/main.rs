@@ -14,6 +14,7 @@ fn main() {
         .image_height(400)
         .samples_per_pixel(10)
         .max_depth(50)
+        // .diffuse("debug")
         // .diffuse("uniform")
         .diffuse("lambertian")
         .initialize();

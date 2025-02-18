@@ -9,6 +9,7 @@ use crate::geo::Vec3;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Diffuse {
+    Debug,
     Uniform,
     Lambertian,
 }
@@ -71,6 +72,7 @@ impl CameraBuilder {
 
     pub fn diffuse(mut self, s: &str) -> CameraBuilder {
         self.diffuse = match s.to_lowercase().as_str() {
+            "debug" => Diffuse::Debug,
             "uniform" => Diffuse::Uniform,
             "lambertian" => Diffuse::Lambertian,
             _ => {
@@ -204,12 +206,14 @@ fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T, depth: u32, diffuse: D
 
     match maybe_hit {
         Some(hit) => {
-            // color based on normal
-            // // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
-            // let normal_01 = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
-            // return Color::from(normal_01);
-
             let direction = match diffuse {
+                Diffuse::Debug => {
+                    // color based on normal
+                    // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
+                    let normal_01 = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
+                    return Color::from(normal_01);
+                }
+
                 Diffuse::Uniform => {
                     // uniform distribution of rays
                     random_unit_normal_direction(&hit.normal)

@@ -1,3 +1,4 @@
+use crate::geo::Interval;
 use crate::geo::Vec3;
 
 #[repr(transparent)]
@@ -17,11 +18,14 @@ impl std::ops::Deref for Color {
     }
 }
 
+const INTENSITY: Interval = Interval::new(0.0, 0.9999);
+
 impl std::fmt::Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let r = (255.999 * self.x()) as u32;
-        let g = (255.999 * self.y()) as u32;
-        let b = (255.999 * self.z()) as u32;
+        // translate [0,1] to rgb byte range [0,255]
+        let r = (256.0 * INTENSITY.clamp(self.x())) as u32;
+        let g = (256.0 * INTENSITY.clamp(self.y())) as u32;
+        let b = (256.0 * INTENSITY.clamp(self.z())) as u32;
 
         write!(f, "{} {} {}", r, g, b)
     }
@@ -52,7 +56,7 @@ mod tests {
     #[test]
     fn test_display() {
         let a = Color::new(0.0, 1.0, 0.5);
-        assert_eq!(format!("{a}"), "0 255 127");
+        assert_eq!(format!("{a}"), "0 255 128");
     }
 
     #[test]

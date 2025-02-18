@@ -1,6 +1,8 @@
 use ray_tracer::color::Color;
+use ray_tracer::hittable::Hittable;
 use ray_tracer::point3::Point3;
 use ray_tracer::ray::Ray;
+use ray_tracer::sphere::Sphere;
 use ray_tracer::vec3::Vec3;
 
 fn main() {
@@ -65,42 +67,29 @@ fn main() {
     eprintln!("saved");
 }
 
-// circle hit test relies on observation that equation of sphere can be rewritten as dot product
-// https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/ray-sphereintersection
-fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> f64 {
-    let oc = Vec3::from(center) - Vec3::from(ray.origin());
-    let a = ray.direction().length_squared();
-    let h = ray.direction().dot(&oc);
-    let c = oc.length_squared() - radius * radius;
-    let discriminant = h * h - a * c;
-
-    if discriminant < 0.0 {
-        return -1.0;
-    }
-
-    return (h - discriminant.sqrt()) / a;
-}
-
 fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
     (1.0 - t) * start + t * end
 }
 
 fn ray_color(ray: Ray) -> Color {
-    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, ray);
+    let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    let maybe_hit = sphere.hit(&ray, 0.0, f64::INFINITY);
 
-    if t > 0.0 {
-        let normal = Vec3::from(ray.at(t)) - Vec3::new(0.0, 0.0, -1.0);
-        let n = normal.unit();
-        // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
-        let normal_01 = 0.5 * Vec3::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
-        return Color::from(normal_01);
+    match maybe_hit {
+        Some(hit) => {
+            let n = hit.normal.unit();
+            // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
+            let normal_01 = 0.5 * Vec3::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
+            return Color::from(normal_01);
+        }
+        _ => {
+            let unit_direction = ray.direction().unit();
+            let a = 0.5 * (unit_direction.y() + 1.0);
+            let white = Color::new(1.0, 1.0, 1.0);
+            let blue = Color::new(0.5, 0.7, 1.0);
+
+            // Color::new(0.0, 0.0, 0.0)
+            Color::from(lerp(a, white.into(), blue.into()))
+        }
     }
-
-    let unit_direction = ray.direction().unit();
-    let a = 0.5 * (unit_direction.y() + 1.0);
-    let white = Color::new(1.0, 1.0, 1.0);
-    let blue = Color::new(0.5, 0.7, 1.0);
-
-    // Color::new(0.0, 0.0, 0.0)
-    Color::from(lerp(a, white.into(), blue.into()))
 }

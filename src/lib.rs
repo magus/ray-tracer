@@ -1,4 +1,5 @@
 pub mod color;
+pub mod core;
 pub mod hittable;
 pub mod point3;
 pub mod ppm;

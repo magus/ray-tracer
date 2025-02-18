@@ -1,5 +1,5 @@
 use ray_tracer::color::Color;
-use ray_tracer::hittable::Hittable;
+use ray_tracer::hittable::{self, Hittable};
 use ray_tracer::point3::Point3;
 use ray_tracer::ray::Ray;
 use ray_tracer::sphere::Sphere;
@@ -11,6 +11,12 @@ fn main() {
     let image_width = image_height * aspect_ratio;
     let real_aspect_ratio = image_width / image_height;
     dbg!((image_width, image_height, aspect_ratio, real_aspect_ratio));
+
+    // world
+    let mut world = hittable::HittableList::new();
+
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
     // camera
     // camera center aka eye point where all rays are cast from
@@ -56,9 +62,9 @@ fn main() {
         for x in 0..x_max {
             let pixel_center = pixel_00 + (x as f64 * pixel_delta_u) + (y as f64 * pixel_delta_v);
             let ray_direction = pixel_center - Vec3::from(camera_center);
-            let r = Ray::new(camera_center, ray_direction);
+            let ray = Ray::new(camera_center, ray_direction);
 
-            let pixel = ray_color(r);
+            let pixel = ray_color(&ray, &world);
             println!("{pixel}");
         }
     }
@@ -71,9 +77,8 @@ fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
     (1.0 - t) * start + t * end
 }
 
-fn ray_color(ray: Ray) -> Color {
-    let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
-    let maybe_hit = sphere.hit(&ray, 0.0, f64::INFINITY);
+fn ray_color<T: Hittable>(ray: &Ray, world: &T) -> Color {
+    let maybe_hit = world.hit(&ray, 0.0, f64::INFINITY);
 
     match maybe_hit {
         Some(hit) => {

@@ -52,12 +52,18 @@ impl hittable::Hittable for Sphere {
         }
 
         let p = ray.at(root);
+        let normal = (Vec3::from(p) - Vec3::from(self.center)) / self.radius;
 
-        Some(HitRecord {
+        let hit_record = HitRecord {
             t: root,
             p,
-            normal: (Vec3::from(p) - Vec3::from(self.center)) / self.radius,
-        })
+            normal,
+            front_face: false,
+        };
+
+        hit_record.set_face_normal(ray);
+
+        Some(hit_record)
     }
 }
 

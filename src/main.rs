@@ -1,9 +1,9 @@
-use ray_tracer::color::Color;
-use ray_tracer::hittable::{self, Hittable};
-use ray_tracer::point3::Point3;
-use ray_tracer::ray::Ray;
-use ray_tracer::sphere::Sphere;
-use ray_tracer::vec3::Vec3;
+use ray_tracer::core::Color;
+use ray_tracer::geo::hittable;
+use ray_tracer::geo::Point3;
+use ray_tracer::geo::Ray;
+use ray_tracer::geo::Sphere;
+use ray_tracer::geo::Vec3;
 
 fn main() {
     let aspect_ratio = 16.0 / 9.0;
@@ -77,7 +77,7 @@ fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
     (1.0 - t) * start + t * end
 }
 
-fn ray_color<T: Hittable>(ray: &Ray, world: &T) -> Color {
+fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T) -> Color {
     let maybe_hit = world.hit(&ray, 0.0, f64::INFINITY);
 
     match maybe_hit {

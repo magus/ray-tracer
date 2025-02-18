@@ -1,5 +1,5 @@
-use crate::point3::Point3;
-use crate::vec3::Vec3;
+use crate::geo::Point3;
+use crate::geo::Vec3;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ray {

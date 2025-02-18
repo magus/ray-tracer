@@ -1,8 +1,6 @@
-use core::f64;
-
-use crate::point3::Point3;
-use crate::ray::Ray;
-use crate::vec3::Vec3;
+use crate::geo::Point3;
+use crate::geo::Ray;
+use crate::geo::Vec3;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct HitRecord {

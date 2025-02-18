@@ -1,11 +1,5 @@
-pub mod color;
 pub mod core;
-pub mod hittable;
-pub mod point3;
-pub mod ppm;
-pub mod ray;
-pub mod sphere;
-pub mod vec3;
+pub mod geo;
 
 #[cfg(test)]
 pub mod test;

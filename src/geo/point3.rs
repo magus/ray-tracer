@@ -1,4 +1,4 @@
-use crate::vec3::Vec3;
+use crate::geo::Vec3;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq)]

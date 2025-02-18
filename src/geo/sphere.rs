@@ -1,7 +1,7 @@
-use crate::hittable::{self, HitRecord};
-use crate::point3::Point3;
-use crate::ray::Ray;
-use crate::vec3::Vec3;
+use crate::geo::hittable;
+use crate::geo::Point3;
+use crate::geo::Ray;
+use crate::geo::Vec3;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sphere {
@@ -54,7 +54,7 @@ impl hittable::Hittable for Sphere {
         let p = ray.at(root);
         let normal = (Vec3::from(p) - Vec3::from(self.center)) / self.radius;
 
-        let hit_record = HitRecord {
+        let hit_record = hittable::HitRecord {
             t: root,
             p,
             normal,
@@ -70,7 +70,7 @@ impl hittable::Hittable for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hittable::Hittable;
+    use crate::geo::Hittable;
 
     #[test]
     fn test_sphere_radius_minimum() {

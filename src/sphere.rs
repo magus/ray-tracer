@@ -5,8 +5,8 @@ use crate::vec3::Vec3;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sphere {
-    pub center: Point3,
-    pub radius: f64,
+    center: Point3,
+    radius: f64,
 }
 
 impl Sphere {
@@ -15,6 +15,14 @@ impl Sphere {
             center,
             radius: radius.max(0.0),
         }
+    }
+
+    pub fn center(&self) -> &Point3 {
+        &self.center
+    }
+
+    pub fn radius(&self) -> f64 {
+        self.radius
     }
 }
 
@@ -50,5 +58,39 @@ impl hittable::Hittable for Sphere {
             p,
             normal: (Vec3::from(p) - Vec3::from(self.center)) / self.radius,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::hittable::Hittable;
+
+    #[test]
+    fn test_sphere_radius_minimum() {
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), -10.0);
+        assert_eq!(sphere.radius, 0.0);
+    }
+
+    #[test]
+    fn test_sphere_hit() {
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+        let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
+
+        let hit = sphere.hit(&ray, 0.0, 100.0);
+        assert!(hit.is_some());
+        let record = hit.unwrap();
+        assert_eq!(record.t, 0.5);
+        assert_eq!(record.p, Point3::new(0.0, 0.0, -0.5));
+        assert_eq!(record.normal, Vec3::new(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn test_sphere_miss() {
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+        let ray = Ray::new(Point3::new(0.0, 1.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
+
+        let hit = sphere.hit(&ray, 0.0, 100.0);
+        assert!(hit.is_none());
     }
 }

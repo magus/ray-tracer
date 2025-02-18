@@ -4,7 +4,6 @@ use ray_tracer::geo::Point3;
 use ray_tracer::geo::Sphere;
 
 fn main() {
-    // world
     let mut world = hittable::HittableList::new();
 
     world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));

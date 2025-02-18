@@ -5,7 +5,6 @@ use crate::geo::Ray;
 use crate::geo::Vec3;
 
 pub struct Camera {
-    aspect_ratio: f64,
     image_width: f64,
     image_height: f64,
     center: Point3,
@@ -73,7 +72,6 @@ impl CameraBuilder {
         dbg!((viewport_upper_left, pixel_00));
 
         Camera {
-            aspect_ratio,
             image_width,
             image_height,
             center,

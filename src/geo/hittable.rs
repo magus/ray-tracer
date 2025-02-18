@@ -1,3 +1,4 @@
+use crate::geo::Interval;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
@@ -46,7 +47,9 @@ impl HittableList {
 
 impl Hittable for HittableList {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
-        let mut closest_so_far = t_max;
+        let t_interval = Interval::new(t_min, t_max);
+
+        let mut closest_so_far = t_interval.max();
         let mut hit_record: Option<HitRecord> = None;
 
         for object in &self.objects {

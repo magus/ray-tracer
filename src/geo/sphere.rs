@@ -1,4 +1,5 @@
 use crate::geo::hittable;
+use crate::geo::Interval;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
@@ -30,6 +31,8 @@ impl hittable::Hittable for Sphere {
     // circle hit test relies on observation that equation of sphere can be rewritten as dot product
     // https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/ray-sphereintersection
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<hittable::HitRecord> {
+        let t_interval = Interval::new(t_min, t_max);
+
         let oc = Vec3::from(self.center) - Vec3::from(ray.origin());
         let a = ray.direction().length_squared();
         let h = ray.direction().dot(&oc);
@@ -44,9 +47,9 @@ impl hittable::Hittable for Sphere {
 
         let root = (h - sqrtd) / a;
 
-        if root <= t_min || t_max <= root {
+        if !t_interval.surrounds(root) {
             let root = (h + sqrtd) / a;
-            if root <= t_min || t_max <= root {
+            if !t_interval.surrounds(root) {
                 return None;
             }
         }

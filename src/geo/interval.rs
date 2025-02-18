@@ -1,3 +1,4 @@
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Interval {
     min: f64,
     max: f64,

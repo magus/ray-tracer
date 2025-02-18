@@ -11,6 +11,7 @@ pub struct Camera {
     image_height: f64,
     samples_per_pixel: u32,
     pixel_samples_scale: f64,
+    max_depth: u32,
     center: Point3,
     pixel_00: Point3,
     pixel_delta_u: Vec3,
@@ -22,6 +23,8 @@ pub struct CameraBuilder {
     image_height: f64,
     /// Count of random samples for each pixel
     samples_per_pixel: u32,
+    /// Maximum number of ray bounces into scene
+    max_depth: u32,
 }
 
 impl CameraBuilder {
@@ -30,6 +33,7 @@ impl CameraBuilder {
             aspect_ratio: 1.0,
             image_height: 100.0,
             samples_per_pixel: 10,
+            max_depth: 10,
         }
     }
 
@@ -48,6 +52,11 @@ impl CameraBuilder {
         self
     }
 
+    pub fn max_depth(mut self, max_depth: u32) -> CameraBuilder {
+        self.max_depth = max_depth;
+        self
+    }
+
     pub fn initialize(&self) -> Camera {
         let aspect_ratio = self.aspect_ratio;
         let image_height = self.image_height;
@@ -55,6 +64,8 @@ impl CameraBuilder {
 
         let samples_per_pixel = self.samples_per_pixel;
         let pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
+
+        let max_depth = self.max_depth;
 
         // camera center aka eye point where all rays are cast from
         // right-handed coordinates
@@ -91,6 +102,7 @@ impl CameraBuilder {
             image_height,
             samples_per_pixel,
             pixel_samples_scale,
+            max_depth,
             center,
             pixel_00: Point3::from(pixel_00),
             pixel_delta_u,
@@ -121,7 +133,7 @@ impl Camera {
 
                 for _sample in 0..self.samples_per_pixel {
                     let ray = self.get_ray(x, y);
-                    let color = ray_color(&ray, world);
+                    let color = ray_color(&ray, world, self.max_depth);
                     pixel_vec3 += Vec3::from(color);
                 }
 
@@ -153,7 +165,12 @@ fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
     (1.0 - t) * start + t * end
 }
 
-fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T) -> Color {
+fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T, depth: u32) -> Color {
+    // exceeded ray bounce limit, stop gathering light
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+
     let maybe_hit = world.hit(&ray, 0.0, f64::INFINITY);
 
     match maybe_hit {
@@ -166,7 +183,7 @@ fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T) -> Color {
             // color based on matte surface, return 50% of color
             let direction = random_unit_normal_direction(&hit.normal);
             let hit_ray = Ray::new(hit.p, direction);
-            return Color::from(0.5 * Vec3::from(ray_color(&hit_ray, world)));
+            return Color::from(0.5 * Vec3::from(ray_color(&hit_ray, world, depth - 1)));
         }
 
         _ => {

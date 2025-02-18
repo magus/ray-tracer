@@ -12,6 +12,8 @@ fn main() {
     let camera = Camera::new()
         .aspect_ratio(16.0 / 9.0)
         .image_height(400)
+        .samples_per_pixel(10)
+        .max_depth(50)
         .initialize();
 
     camera.render(&world);

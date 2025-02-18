@@ -171,7 +171,8 @@ fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T, depth: u32) -> Color {
         return Color::new(0.0, 0.0, 0.0);
     }
 
-    let maybe_hit = world.hit(&ray, 0.0, f64::INFINITY);
+    // lower bound t=0.001 to avoid self-intersect near surface
+    let maybe_hit = world.hit(&ray, 0.001, f64::INFINITY);
 
     match maybe_hit {
         Some(hit) => {

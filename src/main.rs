@@ -69,16 +69,16 @@ fn main() {
 // https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/ray-sphereintersection
 fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> f64 {
     let oc = Vec3::from(center) - Vec3::from(ray.origin());
-    let a = ray.direction().dot(ray.direction());
-    let b = -2.0 * ray.direction().dot(&oc);
-    let c = oc.dot(&oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
+    let a = ray.direction().length_squared();
+    let h = ray.direction().dot(&oc);
+    let c = oc.length_squared() - radius * radius;
+    let discriminant = h * h - a * c;
 
     if discriminant < 0.0 {
         return -1.0;
     }
 
-    return (-b - discriminant.sqrt()) / (2.0 * a);
+    return (h - discriminant.sqrt()) / a;
 }
 
 fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {

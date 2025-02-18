@@ -100,7 +100,8 @@ impl CameraBuilder {
         let real_aspect_ratio = image_width / image_height;
         let viewport_height = 2.0;
         let viewport_width = viewport_height * real_aspect_ratio;
-        dbg!((viewport_width, viewport_height));
+
+        // dbg!((viewport_width, viewport_height));
 
         // vectors along viewport edges
         let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
@@ -110,17 +111,18 @@ impl CameraBuilder {
         let pixel_delta_u = viewport_u / image_width;
         let pixel_delta_v = viewport_v / image_height;
 
-        // location of upper left pixel
         let focal_length = 1.0;
         let center = Point3::new(0.0, 0.0, 0.0);
+
+        // location of upper left pixel
         // subtract focal to move from camera to viewport
         // subtract half viewport u + v to move from center to upper left corner
         let viewport_upper_left = Vec3::from(center)
             - Vec3::new(0.0, 0.0, focal_length)
             - viewport_u / 2.0
             - viewport_v / 2.0;
-        let pixel_00 = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-        dbg!((viewport_upper_left, pixel_00));
+
+        let pixel_00 = Point3::from(viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v));
 
         Camera {
             image_width,
@@ -130,7 +132,7 @@ impl CameraBuilder {
             max_depth,
             diffuse,
             center,
-            pixel_00: Point3::from(pixel_00),
+            pixel_00,
             pixel_delta_u,
             pixel_delta_v,
         }
@@ -152,7 +154,7 @@ impl Camera {
         println!("{max_value}");
 
         for y in 0..y_max {
-            eprint!("saving {}/{y_max}\r", y + 1);
+            eprint!("\rsaving {}/{y_max}", y + 1);
 
             for x in 0..x_max {
                 let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));

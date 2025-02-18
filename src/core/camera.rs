@@ -1,6 +1,7 @@
 use crate::core::random_f64;
 use crate::core::Color;
 use crate::geo::hittable;
+use crate::geo::random_unit_normal_direction;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
@@ -157,10 +158,17 @@ fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T) -> Color {
 
     match maybe_hit {
         Some(hit) => {
-            // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
-            let normal_01 = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
-            return Color::from(normal_01);
+            // color based on normal
+            // // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
+            // let normal_01 = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
+            // return Color::from(normal_01);
+
+            // color based on matte surface, return 50% of color
+            let direction = random_unit_normal_direction(&hit.normal);
+            let hit_ray = Ray::new(hit.p, direction);
+            return Color::from(0.5 * Vec3::from(ray_color(&hit_ray, world)));
         }
+
         _ => {
             let unit_direction = ray.direction().unit();
             let a = 0.5 * (unit_direction.y() + 1.0);

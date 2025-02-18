@@ -1,3 +1,4 @@
+use crate::core::{random_f64, random_f64_range};
 use std::ops;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -23,6 +24,18 @@ impl Vec3 {
         Vec3::new(x as f64, y as f64, z as f64)
     }
 
+    pub fn random() -> Vec3 {
+        Vec3::new(random_f64(), random_f64(), random_f64())
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Vec3 {
+        Vec3::new(
+            random_f64_range(min, max),
+            random_f64_range(min, max),
+            random_f64_range(min, max),
+        )
+    }
+
     pub fn x(&self) -> f64 {
         self.x
     }
@@ -35,19 +48,19 @@ impl Vec3 {
         self.z
     }
 
-    pub fn length_squared(self) -> f64 {
+    pub fn length_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
-    pub fn length(self) -> f64 {
+    pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
 
-    pub fn dot(self, v: &Vec3) -> f64 {
+    pub fn dot(&self, v: &Vec3) -> f64 {
         self.x * v.x + self.y * v.y + self.z * v.z
     }
 
-    pub fn cross(self, v: &Vec3) -> Vec3 {
+    pub fn cross(&self, v: &Vec3) -> Vec3 {
         Vec3::new(
             self.y * v.z - self.z * v.y,
             self.z * v.x - self.x * v.z,
@@ -55,8 +68,8 @@ impl Vec3 {
         )
     }
 
-    pub fn unit(self) -> Vec3 {
-        self / self.length()
+    pub fn unit(&self) -> Vec3 {
+        *self / self.length()
     }
 }
 

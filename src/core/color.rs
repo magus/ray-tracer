@@ -20,12 +20,29 @@ impl std::ops::Deref for Color {
 
 const INTENSITY: Interval = Interval::new(0.0, 0.9999);
 
+fn linear_to_gamma(linear_component: f64) -> f64 {
+    if linear_component > 0.0 {
+        linear_component.sqrt()
+    } else {
+        0.0
+    }
+}
+
 impl std::fmt::Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let r = self.x();
+        let g = self.y();
+        let b = self.z();
+
+        // transform for gamma 2
+        let r = linear_to_gamma(r);
+        let g = linear_to_gamma(g);
+        let b = linear_to_gamma(b);
+
         // translate [0,1] to rgb byte range [0,255]
-        let r = (256.0 * INTENSITY.clamp(self.x())) as u32;
-        let g = (256.0 * INTENSITY.clamp(self.y())) as u32;
-        let b = (256.0 * INTENSITY.clamp(self.z())) as u32;
+        let r = (256.0 * INTENSITY.clamp(r)) as u32;
+        let g = (256.0 * INTENSITY.clamp(g)) as u32;
+        let b = (256.0 * INTENSITY.clamp(b)) as u32;
 
         write!(f, "{} {} {}", r, g, b)
     }
@@ -56,7 +73,7 @@ mod tests {
     #[test]
     fn test_display() {
         let a = Color::new(0.0, 1.0, 0.5);
-        assert_eq!(format!("{a}"), "0 255 128");
+        assert_eq!(format!("{a}"), "0 255 181");
     }
 
     #[test]

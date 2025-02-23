@@ -2,7 +2,7 @@ use crate::geo::Interval;
 use crate::geo::Vec3;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Color(Vec3);
 
 impl Color {
@@ -69,6 +69,12 @@ impl From<Vec3> for Color {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_default() {
+        let a = Color::default();
+        assert_eq!(format!("{a}"), "0 0 0");
+    }
 
     #[test]
     fn test_display() {

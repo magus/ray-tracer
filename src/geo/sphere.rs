@@ -1,20 +1,23 @@
 use crate::geo::hittable;
 use crate::geo::Interval;
+use crate::geo::MaterialType;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Sphere {
     center: Point3,
     radius: f64,
+    material: MaterialType,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Sphere {
+    pub fn new(center: Point3, radius: f64, material: MaterialType) -> Sphere {
         Sphere {
             center,
             radius: radius.max(0.0),
+            material,
         }
     }
 
@@ -62,6 +65,7 @@ impl hittable::Hittable for Sphere {
             p,
             normal,
             front_face: false,
+            material: self.material,
         };
 
         hit_record.set_face_normal(ray);
@@ -73,17 +77,27 @@ impl hittable::Hittable for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::Color;
     use crate::geo::Hittable;
 
     #[test]
+    fn test_sphere_default() {
+        let sphere = <Sphere>::default();
+        assert_eq!(sphere.radius, 0.0);
+        assert_eq!(sphere.material, MaterialType::empty());
+    }
+
+    #[test]
     fn test_sphere_radius_minimum() {
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), -10.0);
+        let material = MaterialType::empty();
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), -10.0, material);
         assert_eq!(sphere.radius, 0.0);
     }
 
     #[test]
     fn test_sphere_hit() {
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+        let material = MaterialType::empty();
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, 0.0, 100.0);
@@ -96,10 +110,21 @@ mod tests {
 
     #[test]
     fn test_sphere_miss() {
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+        let material = MaterialType::empty();
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
         let ray = Ray::new(Point3::new(0.0, 1.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, 0.0, 100.0);
         assert!(hit.is_none());
+    }
+
+    #[test]
+    fn test_sphere_material() {
+        let material = MaterialType::lambertian(Color::new(1.0, 0.0, 0.0), 1.0);
+        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
+        let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
+
+        let hit = sphere.hit(&ray, 0.0, 100.0);
+        assert!(hit.is_some());
     }
 }

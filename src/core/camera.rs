@@ -1,18 +1,9 @@
 use crate::core::random_f64;
 use crate::core::Color;
-use crate::geo::hittable;
-use crate::geo::random_unit;
-use crate::geo::random_unit_normal_direction;
+use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum Diffuse {
-    Debug,
-    Uniform,
-    Lambertian,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -21,7 +12,6 @@ pub struct Camera {
     samples_per_pixel: u32,
     pixel_samples_scale: f64,
     max_depth: u32,
-    diffuse: Diffuse,
     center: Point3,
     pixel_00: Point3,
     pixel_delta_u: Vec3,
@@ -35,8 +25,6 @@ pub struct CameraBuilder {
     samples_per_pixel: u32,
     /// Maximum number of ray bounces into scene
     max_depth: u32,
-    /// Diffuse distribution, "uniform" or "lambertian"
-    diffuse: Diffuse,
 }
 
 impl CameraBuilder {
@@ -46,7 +34,6 @@ impl CameraBuilder {
             image_height: 100.0,
             samples_per_pixel: 10,
             max_depth: 10,
-            diffuse: Diffuse::Lambertian,
         }
     }
 
@@ -70,19 +57,6 @@ impl CameraBuilder {
         self
     }
 
-    pub fn diffuse(mut self, s: &str) -> CameraBuilder {
-        self.diffuse = match s.to_lowercase().as_str() {
-            "debug" => Diffuse::Debug,
-            "uniform" => Diffuse::Uniform,
-            "lambertian" => Diffuse::Lambertian,
-            _ => {
-                eprintln!("Unknown diffuse '{s}', defaulting to lambertian...");
-                Diffuse::Lambertian
-            }
-        };
-        self
-    }
-
     pub fn initialize(&self) -> Camera {
         let aspect_ratio = self.aspect_ratio;
         let image_height = self.image_height;
@@ -92,7 +66,6 @@ impl CameraBuilder {
         let pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
 
         let max_depth = self.max_depth;
-        let diffuse = self.diffuse;
 
         // camera center aka eye point where all rays are cast from
         // right-handed coordinates
@@ -132,7 +105,6 @@ impl CameraBuilder {
             samples_per_pixel,
             pixel_samples_scale,
             max_depth,
-            diffuse,
             center,
             pixel_00,
             pixel_delta_u,
@@ -146,7 +118,7 @@ impl Camera {
         CameraBuilder::new()
     }
 
-    pub fn render<T: hittable::Hittable>(&self, world: &T) {
+    pub fn render<T: Hittable>(&self, world: &T) {
         let y_max = self.image_height as u32;
         let x_max = self.image_width as u32;
         let max_value = 255;
@@ -163,7 +135,7 @@ impl Camera {
 
                 for _sample in 0..self.samples_per_pixel {
                     let ray = self.get_ray(x, y);
-                    let color = ray_color(&ray, world, self.max_depth, self.diffuse);
+                    let color = ray_color(&ray, world, self.max_depth);
                     pixel_vec3 += Vec3::from(color);
                 }
 
@@ -195,51 +167,35 @@ fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
     (1.0 - t) * start + t * end
 }
 
-fn ray_color<T: hittable::Hittable>(ray: &Ray, world: &T, depth: u32, diffuse: Diffuse) -> Color {
+fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: u32) -> Color {
     // exceeded ray bounce limit, stop gathering light
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
     // lower bound t=0.001 to avoid self-intersect near surface
-    let maybe_hit = world.hit(&ray, 0.001, f64::INFINITY);
+    if let Some(hit) = world.hit(ray, 0.001, f64::INFINITY) {
+        if let Some(scatter_record) = hit.material.scatter(ray, hit) {
+            // early return if color is provided, e.g. Debug material
+            if let Some(color) = scatter_record.color {
+                return color;
+            }
 
-    match maybe_hit {
-        Some(hit) => {
-            let direction = match diffuse {
-                Diffuse::Debug => {
-                    // color based on normal
-                    // normal is in range [-1, 1], add 1 ([0, 2]) and halving ([0, 1])
-                    let normal_01 = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
-                    return Color::from(normal_01);
-                }
-
-                Diffuse::Uniform => {
-                    // uniform distribution of rays
-                    random_unit_normal_direction(&hit.normal)
-                }
-                Diffuse::Lambertian => {
-                    // lambertian distribution proportional to surface normal, more accurate than uniform
-                    hit.normal + random_unit()
-                }
-            };
-
-            let hit_ray = Ray::new(hit.p, direction);
-
-            // color based on matte surface, return 50% of color
-            return Color::from(0.5 * Vec3::from(ray_color(&hit_ray, world, depth - 1, diffuse)));
+            let attentuation = Vec3::from(scatter_record.attenuation);
+            let next_ray_color = Vec3::from(ray_color(&scatter_record.ray, world, depth - 1));
+            return Color::from(attentuation * next_ray_color);
         }
 
-        _ => {
-            let unit_direction = ray.direction().unit();
-            let a = 0.5 * (unit_direction.y() + 1.0);
-            let white = Color::new(1.0, 1.0, 1.0);
-            let blue = Color::new(0.5, 0.7, 1.0);
-
-            // Color::new(0.0, 0.0, 0.0)
-            Color::from(lerp(a, white.into(), blue.into()))
-        }
+        return Color::new(0.0, 0.0, 0.0);
     }
+
+    let unit_direction = ray.direction().unit();
+    let a = 0.5 * (unit_direction.y() + 1.0);
+    let white = Color::new(1.0, 1.0, 1.0);
+    let blue = Color::new(0.5, 0.7, 1.0);
+
+    // Color::new(0.0, 0.0, 0.0)
+    Color::from(lerp(a, white.into(), blue.into()))
 }
 
 fn sample_square() -> Point3 {

@@ -1,7 +1,7 @@
 use crate::core::{random_f64, random_f64_range};
 use std::ops;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -70,6 +70,26 @@ impl Vec3 {
 
     pub fn unit(&self) -> Vec3 {
         *self / self.length()
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+    }
+
+    // to 'flip' (reflect) a vector v perpendicular to n  we reverse the component
+    // of v that is in the direction of the normal, the component of v along the n
+    //
+    //   (v dot n) * n
+    //
+    // to reverse, we subtract it twice, once to zero then again to complete reversal
+    //
+    //   v - 2 * (v dot n) * n
+    //
+    pub fn reflect(&self, normal: &Vec3) -> Vec3 {
+        let nv = self.dot(normal) * *normal;
+        let r = *self - (2.0 * nv);
+        r
     }
 }
 
@@ -226,6 +246,12 @@ impl ops::DivAssign<f64> for Vec3 {
 mod tests {
     use super::*;
     use crate::test::assert;
+
+    #[test]
+    fn test_default() {
+        let a = Vec3::default();
+        assert_eq!(a, Vec3::new(0.0, 0.0, 0.0));
+    }
 
     #[test]
     fn test_mut_field() {
@@ -400,5 +426,46 @@ mod tests {
         assert::float(result.x, 0.2672612, 5);
         assert::float(result.y, 0.5345224, 5);
         assert::float(result.z, 0.8017837, 5);
+    }
+
+    #[test]
+    fn test_near_zero() {
+        let a = Vec3::new(0.000000003, 0.0000000000000921, 0.0000000000000000375);
+        assert_eq!(a.near_zero(), true);
+    }
+
+    #[test]
+    fn test_reflect_parallel() {
+        // flip, v is parallel to n so entire vector is reversed
+        let v = Vec3::inew(2, 0, 0);
+        let n = Vec3::inew(-1, 0, 0);
+        assert_eq!(v.reflect(&n), Vec3::inew(-2, 0, 0));
+
+        let v = Vec3::inew(2, 0, 0);
+        let n = Vec3::inew(1, 0, 0);
+        assert_eq!(v.reflect(&n), Vec3::inew(-2, 0, 0));
+    }
+
+    #[test]
+    fn test_reflect_perpendicular() {
+        // no change, there is no component of v along n to flip
+        let v = Vec3::inew(0, 2, 0);
+        let n = Vec3::inew(-1, 0, 0);
+        assert_eq!(v.reflect(&n), Vec3::inew(0, 2, 0));
+
+        let v = Vec3::inew(0, 2, 0);
+        let n = Vec3::inew(1, 0, 0);
+        assert_eq!(v.reflect(&n), Vec3::inew(0, 2, 0));
+    }
+
+    #[test]
+    fn test_reflect_angled() {
+        let v = Vec3::inew(1, 2, 3);
+        let n = Vec3::inew(0, 1, 0);
+        assert_eq!(v.reflect(&n), Vec3::inew(1, -2, 3));
+
+        let v = Vec3::inew(1, 2, 3);
+        let n = Vec3::inew(0, -1, 0);
+        assert_eq!(v.reflect(&n), Vec3::inew(1, -2, 3));
     }
 }

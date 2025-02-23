@@ -1,7 +1,7 @@
 use crate::geo::Vec3;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Point3(Vec3);
 
 impl Point3 {
@@ -44,6 +44,12 @@ impl From<Vec3> for Point3 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_default() {
+        let a = Point3::default();
+        assert_eq!(format!("{a}"), "(0, 0, 0)");
+    }
 
     #[test]
     fn test_display() {

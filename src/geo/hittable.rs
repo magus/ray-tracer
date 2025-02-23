@@ -1,14 +1,16 @@
 use crate::geo::Interval;
+use crate::geo::MaterialType;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
+    pub material: MaterialType,
 }
 
 impl HitRecord {

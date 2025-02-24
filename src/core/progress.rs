@@ -1,20 +1,20 @@
+use std::sync::atomic;
+
 pub struct Progress {
-    pub cur: std::sync::Mutex<u32>,
+    pub cur: atomic::AtomicU32,
     pub max: u32,
 }
 
 impl Progress {
     pub fn new(max: u32) -> Self {
         Progress {
-            cur: std::sync::Mutex::new(0),
+            cur: atomic::AtomicU32::new(0),
             max,
         }
     }
 
     pub fn inc(&self) -> u32 {
-        let mut p_mut = self.cur.lock().unwrap();
-        *p_mut += 1;
-        *p_mut
+        self.cur.fetch_add(1, atomic::Ordering::Relaxed) + 1
     }
 
     pub fn bar(&self, current: u32) -> String {

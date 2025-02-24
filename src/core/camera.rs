@@ -1,5 +1,6 @@
 use crate::core::random_f64;
 use crate::core::Color;
+use crate::core::Progress;
 use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
@@ -140,8 +141,7 @@ impl Camera {
         writeln!(out, "{x_max} {y_max}").unwrap();
         writeln!(out, "{max_value}").unwrap();
 
-        // create mutex for tracking progress
-        let progress_mutex = std::sync::Mutex::new(0);
+        let progress = Progress::new(y_max);
 
         let rows: Vec<String> = (0..y_max)
             .into_par_iter()
@@ -163,13 +163,8 @@ impl Camera {
                 }
 
                 // row done, update progress
-                let progress = {
-                    let mut p_mut = progress_mutex.lock().unwrap();
-                    *p_mut += 1;
-                    *p_mut
-                };
-
-                eprint!("\rprogress {}/{y_max}", progress);
+                let current = progress.inc();
+                eprint!("\r{}", progress.bar(current));
 
                 row
             })

@@ -10,7 +10,8 @@ fn main() {
 
     let mat_ground = MaterialType::lambertian(Color::new(0.8, 0.8, 0.0), 1.0, false);
     let mat_center = MaterialType::lambertian(Color::new(0.1, 0.2, 0.5), 1.0, false);
-    let mat_left = MaterialType::dielectric(1.00 / 1.33);
+    let mat_left = MaterialType::dielectric(1.5);
+    let mat_bubble = MaterialType::dielectric(1.0 / 1.5);
     let mat_right = MaterialType::metal(Color::new(0.8, 0.6, 0.2), 1.0, 1.0);
 
     world.add(Box::new(Sphere::new(
@@ -18,16 +19,25 @@ fn main() {
         100.0,
         mat_ground,
     )));
+
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, 0.0, -1.2),
         0.5,
         mat_center,
     )));
+
     world.add(Box::new(Sphere::new(
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
         mat_left,
     )));
+
+    world.add(Box::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.4,
+        mat_bubble,
+    )));
+
     world.add(Box::new(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),
         0.5,

@@ -5,3 +5,9 @@ edition = "2021"
 
 [dependencies]
 rand = "0.9.0"
+
+[profile.release]
+opt-level = 3     # maximum optimization
+lto = true        # enable link-time optimization
+codegen-units = 1 # improve optimizations by reducing parallel codegen units
+panic = "abort"   # reduce overhead from unwinding

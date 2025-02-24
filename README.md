@@ -1,8 +1,14 @@
 # ray-tracer
 
 ```bash
+# debug
 time (rm -f img.ppm && cargo run > img.ppm)
 
+# release
+cargo build --release
+time (rm -f img.ppm && ./target/release/ray-tracer > img.ppm)
+
+# test
 cargo test
 ```
 

@@ -14,7 +14,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn set_face_normal(mut self, ray: &Ray) {
+    pub fn set_face_normal(&mut self, ray: &Ray) {
         // NOTE: `normal` assumed to have unit length
 
         self.front_face = ray.direction().dot(&self.normal) < 0.0;

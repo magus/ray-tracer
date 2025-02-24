@@ -60,7 +60,7 @@ impl hittable::Hittable for Sphere {
         let p = ray.at(root);
         let normal = (Vec3::from(p) - Vec3::from(self.center)) / self.radius;
 
-        let hit_record = hittable::HitRecord {
+        let mut hit_record = hittable::HitRecord {
             t: root,
             p,
             normal,

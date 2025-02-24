@@ -118,6 +118,13 @@ impl Camera {
         CameraBuilder::new()
     }
 
+    pub fn debug<T: Hittable>(&self, world: &T, x: u32, y: u32) {
+        let ray = self.get_ray(x, y);
+        let color = ray_color(&ray, world, self.max_depth);
+        eprintln!("ray={:?}", ray);
+        eprintln!("color={:?}", color);
+    }
+
     pub fn render<T: Hittable>(&self, world: &T) {
         let y_max = self.image_height as u32;
         let x_max = self.image_width as u32;
@@ -168,6 +175,8 @@ fn lerp(t: f64, start: Vec3, end: Vec3) -> Vec3 {
 }
 
 fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: u32) -> Color {
+    // eprintln!("ray_color: depth={depth}, ray={:?}", ray);
+
     // exceeded ray bounce limit, stop gathering light
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);

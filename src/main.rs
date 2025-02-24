@@ -41,5 +41,7 @@ fn main() {
         .max_depth(50)
         .initialize();
 
+    // camera.debug(&world, 100, 200);
+
     camera.render(&world);
 }

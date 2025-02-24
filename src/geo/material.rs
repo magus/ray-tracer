@@ -224,17 +224,15 @@ impl Material for Dielectric {
         // eprintln!("  incident direction (unit)={:?}", incident_uv);
         // eprintln!("  refraction_index={:?}", refraction_index);
 
-        // let cos_theta = incident_uv.cos_theta(&hit_record.normal);
-        // let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-        // let cannot_refract = refraction_index * sin_theta > 1.0;
+        let cos_theta = incident_uv.cos_theta(&hit_record.normal);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = refraction_index * sin_theta > 1.0;
 
-        // let direction = if cannot_refract {
-        //     incident_uv.reflect(&hit_record.normal)
-        // } else {
-        //     incident_uv.refract(&hit_record.normal, refraction_index)
-        // };
-
-        let direction = incident_uv.refract(&hit_record.normal, refraction_index);
+        let direction = if cannot_refract {
+            incident_uv.reflect(&hit_record.normal)
+        } else {
+            incident_uv.refract(&hit_record.normal, refraction_index)
+        };
 
         let ray = Ray::new(hit_record.p, direction);
         let attenuation = Color::new(1.0, 1.0, 1.0);

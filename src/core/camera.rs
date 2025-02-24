@@ -4,6 +4,7 @@ use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
+use std::io::Write;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -130,9 +131,13 @@ impl Camera {
         let x_max = self.image_width as u32;
         let max_value = 255;
 
-        println!("P3");
-        println!("{x_max} {y_max}");
-        println!("{max_value}");
+        // buffer output
+        let stdout = std::io::stdout();
+        let mut out = std::io::BufWriter::new(stdout.lock());
+
+        writeln!(out, "P3").unwrap();
+        writeln!(out, "{x_max} {y_max}").unwrap();
+        writeln!(out, "{max_value}").unwrap();
 
         for y in 0..y_max {
             eprint!("\rsaving {}/{y_max}", y + 1);
@@ -148,9 +153,12 @@ impl Camera {
 
                 let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
                 let pixel = Color::from(pixel_vec3);
-                println!("{pixel}");
+                writeln!(out, "{pixel}").unwrap();
             }
         }
+
+        // flush buffer to stdout
+        out.flush().unwrap();
 
         eprintln!();
         eprintln!("saved");

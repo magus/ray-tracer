@@ -14,7 +14,6 @@ cargo test
 
 ## TODO
 
-- buffer output to prevent print overhead
 - parallelize render, e.g. rayon, calculate multiple pixel rows in parallel?
 
 - viewable render

@@ -228,7 +228,10 @@ impl Material for Dielectric {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_index * sin_theta > 1.0;
 
-        let direction = if cannot_refract {
+        let reflectance_chance = reflectance(cos_theta, refraction_index);
+        let must_reflect = reflectance_chance > random_f64();
+
+        let direction = if cannot_refract || must_reflect {
             incident_uv.reflect(&hit_record.normal)
         } else {
             incident_uv.refract(&hit_record.normal, refraction_index)
@@ -280,4 +283,12 @@ fn reflectance_scatter(options: ReflectanceScatterOptions) -> Option<ScatterReco
         attenuation,
         color: None,
     })
+}
+
+// reflectivity varies with angle, use cheap accurate polynomial approximation
+// https://en.wikipedia.org/wiki/Schlick%27s_approximation
+fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
+    let r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+    let r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }

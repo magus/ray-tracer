@@ -48,10 +48,10 @@ impl hittable::Hittable for Sphere {
 
         let sqrtd = discriminant.sqrt();
 
-        let root = (h - sqrtd) / a;
+        let mut root = (h - sqrtd) / a;
 
         if !t_interval.surrounds(root) {
-            let root = (h + sqrtd) / a;
+            root = (h + sqrtd) / a;
             if !t_interval.surrounds(root) {
                 return None;
             }

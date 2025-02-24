@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_sphere_material() {
-        let material = MaterialType::lambertian(Color::new(1.0, 0.0, 0.0), 1.0);
+        let material = MaterialType::lambertian(Color::new(1.0, 0.0, 0.0), 1.0, false);
         let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 

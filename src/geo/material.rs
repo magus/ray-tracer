@@ -14,6 +14,7 @@ pub enum MaterialType {
     Debug(Debug),
     Lambertian(Lambertian),
     Metal(Metal),
+    Dielectric(Dielectric),
 }
 
 impl MaterialType {
@@ -26,12 +27,16 @@ impl MaterialType {
         MaterialType::Debug(Debug::new())
     }
 
-    pub fn lambertian(albedo: Color, reflectance: f64) -> Self {
-        MaterialType::Lambertian(Lambertian::with_reflectance(albedo, reflectance))
+    pub fn lambertian(albedo: Color, reflectance: f64, uniform: bool) -> Self {
+        MaterialType::Lambertian(Lambertian::new(albedo, reflectance, uniform))
     }
 
-    pub fn metal(albedo: Color, reflectance: f64) -> Self {
-        MaterialType::Metal(Metal::with_reflectance(albedo, reflectance))
+    pub fn metal(albedo: Color, reflectance: f64, fuzz: f64) -> Self {
+        MaterialType::Metal(Metal::new(albedo, reflectance, fuzz))
+    }
+
+    pub fn dielectric(refraction_index: f64) -> Self {
+        MaterialType::Dielectric(Dielectric::new(refraction_index))
     }
 }
 
@@ -42,6 +47,7 @@ impl MaterialType {
             MaterialType::Debug(m) => m.scatter(ray, hit),
             MaterialType::Lambertian(m) => m.scatter(ray, hit),
             MaterialType::Metal(m) => m.scatter(ray, hit),
+            MaterialType::Dielectric(m) => m.scatter(ray, hit),
         }
     }
 }
@@ -66,7 +72,7 @@ impl Default for MaterialType {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Empty {}
+struct Empty {}
 
 impl Empty {
     pub fn new() -> Empty {
@@ -81,7 +87,7 @@ impl Material for Empty {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Debug {}
+struct Debug {}
 
 impl Debug {
     pub fn new() -> Debug {
@@ -105,34 +111,22 @@ impl Material for Debug {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Lambertian {
+struct Lambertian {
     // albedo is latin for 'whiteness' or 'fractional reflectance'
     albedo: Color,
     // reflectance is the fraction of incident light that is reflected
     // 0 all light absorbed, 1 all light reflected
     reflectance: f64,
+    // use a random unit vector instead of a random unit vector added to surface normal
     uniform: bool,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Lambertian {
-        let reflectance = 1.0;
-        Lambertian::with_reflectance(albedo, reflectance)
-    }
-
-    pub fn with_reflectance(albedo: Color, reflectance: f64) -> Lambertian {
+    pub fn new(albedo: Color, reflectance: f64, uniform: bool) -> Lambertian {
         Lambertian {
             albedo,
             reflectance,
-            uniform: false,
-        }
-    }
-
-    pub fn uniform(albedo: Color, reflectance: f64) -> Lambertian {
-        Lambertian {
-            albedo,
-            reflectance,
-            uniform: true,
+            uniform,
         }
     }
 }
@@ -157,29 +151,29 @@ impl Material for Lambertian {
             direction,
             albedo: self.albedo,
             reflectance: self.reflectance,
+            fuzz: 0.0,
         })
     }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Metal {
+struct Metal {
     // albedo is latin for 'whiteness' or 'fractional reflectance'
     albedo: Color,
     // reflectance is the fraction of incident light that is reflected
     // 0 all light absorbed, 1 all light reflected
     reflectance: f64,
+    // randomize reflected direction by using small sphere centered on the original
+    // endpoint choosing a random point from the surface of the sphere
+    fuzz: f64,
 }
 
 impl Metal {
-    pub fn new(albedo: Color) -> Metal {
-        let reflectance = 1.0;
-        Metal::with_reflectance(albedo, reflectance)
-    }
-
-    pub fn with_reflectance(albedo: Color, reflectance: f64) -> Metal {
+    pub fn new(albedo: Color, reflectance: f64, fuzz: f64) -> Metal {
         Metal {
             albedo,
             reflectance,
+            fuzz: fuzz.min(1.0),
         }
     }
 }
@@ -193,6 +187,62 @@ impl Material for Metal {
             direction,
             albedo: self.albedo,
             reflectance: self.reflectance,
+            fuzz: self.fuzz,
+        })
+    }
+}
+
+// clear materials such as water, glass, and diamond
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct Dielectric {
+    // refraction_index is the ratio of incident medium over transmitted medium
+    // refraction index of material over refraction index of enclosing media
+    // snell's law https://en.wikipedia.org/wiki/Snell%27s_law
+    refraction_index: f64,
+}
+
+impl Dielectric {
+    pub fn new(refraction_index: f64) -> Dielectric {
+        Dielectric { refraction_index }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, ray_in: &Ray, hit_record: HitRecord) -> Option<ScatterRecord> {
+        let refraction_index = if hit_record.front_face {
+            1.0 / self.refraction_index
+        } else {
+            self.refraction_index
+        };
+
+        let incident_uv = ray_in.direction().unit();
+
+        // eprintln!("Dielectric.scatter:");
+        // eprintln!("  hit point={:?}", hit_record.p);
+        // eprintln!("  normal={:?}", hit_record.normal);
+        // eprintln!("  front_face={:?}", hit_record.front_face);
+        // eprintln!("  incident direction (unit)={:?}", incident_uv);
+        // eprintln!("  refraction_index={:?}", refraction_index);
+
+        // let cos_theta = incident_uv.cos_theta(&hit_record.normal);
+        // let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        // let cannot_refract = refraction_index * sin_theta > 1.0;
+
+        // let direction = if cannot_refract {
+        //     incident_uv.reflect(&hit_record.normal)
+        // } else {
+        //     incident_uv.refract(&hit_record.normal, refraction_index)
+        // };
+
+        let direction = incident_uv.refract(&hit_record.normal, refraction_index);
+
+        let ray = Ray::new(hit_record.p, direction);
+        let attenuation = Color::new(1.0, 1.0, 1.0);
+
+        Some(ScatterRecord {
+            ray,
+            attenuation,
+            color: None,
         })
     }
 }
@@ -202,6 +252,7 @@ pub struct ReflectanceScatterOptions {
     direction: Vec3,
     albedo: Color,
     reflectance: f64,
+    fuzz: f64,
 }
 
 fn reflectance_scatter(options: ReflectanceScatterOptions) -> Option<ScatterRecord> {
@@ -213,7 +264,14 @@ fn reflectance_scatter(options: ReflectanceScatterOptions) -> Option<ScatterReco
         return None;
     }
 
-    let scattered_ray = Ray::new(options.hit_record.p, options.direction);
+    let reflected = options.direction.unit() + (options.fuzz * random_unit());
+    let scattered_ray = Ray::new(options.hit_record.p, reflected);
+
+    // if the scattered ray is below the surface, it is absorbed
+    let outward_component = scattered_ray.direction().dot(&options.hit_record.normal);
+    if outward_component < 0.0 {
+        return None;
+    }
 
     // divide by zero impossible, options.reflectance will never be zero
     // zero values are handled above since they they will always return None

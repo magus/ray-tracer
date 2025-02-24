@@ -91,6 +91,19 @@ impl Vec3 {
         let r = *self - (2.0 * nv);
         r
     }
+
+    pub fn cos_theta(&self, normal: &Vec3) -> f64 {
+        -self.dot(normal).min(1.0)
+    }
+
+    // refraction_index is the ratio of incident medium over transmitted medium
+    // snell's law https://en.wikipedia.org/wiki/Snell%27s_law
+    pub fn refract(&self, normal: &Vec3, refraction_index: f64) -> Vec3 {
+        let cos_theta = self.cos_theta(normal);
+        let r_out_perp = refraction_index * (*self + (cos_theta * *normal));
+        let r_out_para = (-1.0 * (1.0 - r_out_perp.length_squared()).abs().sqrt()) * *normal;
+        r_out_perp + r_out_para
+    }
 }
 
 impl std::fmt::Display for Vec3 {
@@ -467,5 +480,47 @@ mod tests {
         let v = Vec3::inew(1, 2, 3);
         let n = Vec3::inew(0, -1, 0);
         assert_eq!(v.reflect(&n), Vec3::inew(1, -2, 3));
+    }
+
+    #[test]
+    fn test_refract_normal_incidence() {
+        // ray is perpendicular, refracted ray same as incident ray
+        let uv = Vec3::new(0.0, -1.0, 0.0);
+        let normal = Vec3::new(0.0, 1.0, 0.0);
+        // any refraction index works here; the perpendicular component cancels
+        let refraction_index = 1.5;
+        let result = uv.refract(&normal, refraction_index);
+        let expected = Vec3::new(0.0, -1.0, 0.0);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_refract_no_refraction() {
+        // refraction index is 1.0, direction remains unchanged
+        let uv = Vec3::new(1.0, -1.0, 0.0).unit();
+        let normal = Vec3::new(0.0, 1.0, 0.0);
+        let refraction_index = 1.0;
+        let result = uv.refract(&normal, refraction_index);
+        // result should match original unit vector
+        assert::float(result.x, uv.x, 5);
+        assert::float(result.y, uv.y, 5);
+        assert::float(result.z, uv.z, 5);
+    }
+
+    #[test]
+    fn test_refract_with_total_internal_reflection() {
+        // higher refraction index, part of ray "bent" such that computed
+        // perpendicular component exceeds 1, leading to reduced parallel part
+        let uv = Vec3::new(1.0, -1.0, 0.0).unit();
+        let normal = Vec3::new(0.0, 1.0, 0.0);
+        let refraction_index = 1.5;
+        let result = uv.refract(&normal, refraction_index);
+        // precomputed expected values:
+        // r_out_perp = 1.5 * (uv + 0.7071 * normal) ≈ (1.06066, 0, 0)
+        // r_out_para = -sqrt(|1 - 1.125|) * normal ≈ (0, -0.35355, 0)
+        // result ≈ (1.06066, -0.35355, 0)
+        assert::float(result.x, 1.06066, 5);
+        assert::float(result.y, -0.35355, 5);
+        assert::float(result.z, 0.0, 5);
     }
 }

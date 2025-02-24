@@ -8,10 +8,10 @@ use ray_tracer::geo::Sphere;
 fn main() {
     let mut world = HittableList::new();
 
-    let mat_ground = MaterialType::lambertian(Color::new(0.8, 0.8, 0.0), 1.0);
-    let mat_center = MaterialType::lambertian(Color::new(0.1, 0.2, 0.5), 1.0);
-    let mat_left = MaterialType::metal(Color::new(0.8, 0.8, 0.8), 1.0);
-    let mat_right = MaterialType::metal(Color::new(0.8, 0.6, 0.2), 1.0);
+    let mat_ground = MaterialType::lambertian(Color::new(0.8, 0.8, 0.0), 1.0, false);
+    let mat_center = MaterialType::lambertian(Color::new(0.1, 0.2, 0.5), 1.0, false);
+    let mat_left = MaterialType::dielectric(1.5);
+    let mat_right = MaterialType::metal(Color::new(0.8, 0.6, 0.2), 1.0, 1.0);
 
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, -100.5, -1.0),
@@ -32,12 +32,6 @@ fn main() {
         Point3::new(1.0, 0.0, -1.0),
         0.5,
         mat_right,
-    )));
-
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, -100.5, -1.0),
-        100.0,
-        MaterialType::lambertian(Color::new(0.0, 0.0, 0.0), 0.5),
     )));
 
     let camera = Camera::new()

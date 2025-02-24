@@ -13,6 +13,7 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
+    #[cfg(test)]
     fn validate(self) {
         assert!(
             self.x.is_finite() && self.y.is_finite() && self.z.is_finite(),

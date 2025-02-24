@@ -8,6 +8,7 @@ use crate::geo::Vec3;
 
 // using an enum here for compile time known sizing so we
 // can use it in a struct without awkward Box or lifetimes
+#[allow(private_interfaces)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MaterialType {
     Empty(Empty),

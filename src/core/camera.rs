@@ -4,6 +4,7 @@ use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
+use rayon::prelude::*;
 use std::io::Write;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -139,22 +140,44 @@ impl Camera {
         writeln!(out, "{x_max} {y_max}").unwrap();
         writeln!(out, "{max_value}").unwrap();
 
-        for y in 0..y_max {
-            eprint!("\rsaving {}/{y_max}", y + 1);
+        // create mutex for tracking progress
+        let progress_mutex = std::sync::Mutex::new(0);
 
-            for x in 0..x_max {
-                let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
+        let rows: Vec<String> = (0..y_max)
+            .into_par_iter()
+            .map(|y| {
+                let mut row = String::new();
 
-                for _sample in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(x, y);
-                    let color = ray_color(&ray, world, self.max_depth);
-                    pixel_vec3 += Vec3::from(color);
+                for x in 0..x_max {
+                    let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
+
+                    for _sample in 0..self.samples_per_pixel {
+                        let ray = self.get_ray(x, y);
+                        let color = ray_color(&ray, world, self.max_depth);
+                        pixel_vec3 += Vec3::from(color);
+                    }
+
+                    let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
+                    let pixel = Color::from(pixel_vec3);
+                    row.push_str(&format!("{pixel}\n"));
                 }
 
-                let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
-                let pixel = Color::from(pixel_vec3);
-                writeln!(out, "{pixel}").unwrap();
-            }
+                // row done, update progress
+                let progress = {
+                    let mut p_mut = progress_mutex.lock().unwrap();
+                    *p_mut += 1;
+                    *p_mut
+                };
+
+                eprint!("\rprogress {}/{y_max}", progress);
+
+                row
+            })
+            .collect();
+
+        // write rows out in order
+        for row in rows {
+            write!(out, "{}", row).unwrap();
         }
 
         // flush buffer to stdout

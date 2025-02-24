@@ -14,8 +14,6 @@ cargo test
 
 ## TODO
 
-- parallelize render, e.g. rayon, calculate multiple pixel rows in parallel?
-
 - viewable render
 - incrementally write to output file
 - view render as it's happening

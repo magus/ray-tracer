@@ -83,11 +83,10 @@ fn main() {
         .look_from(-2.0, 2.0, 1.0)
         .look_at(0.0, 0.0, -1.0)
         .vup(0.0, 1.0, 0.0)
-        .defocus_angle(0.0)
-        .focus_distance(10.0)
+        .defocus_angle(10.0)
+        .focus_distance(3.4)
         .initialize();
 
     // camera.debug(&world, 100, 200);
-
     camera.render(&world);
 }

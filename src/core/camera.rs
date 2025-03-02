@@ -31,6 +31,12 @@ pub struct CameraBuilder {
     max_depth: u32,
     /// Vertical view angle (field of view, fov)
     vertical_fov: f64,
+    /// Point camera is looking from
+    look_from: Point3,
+    /// Point camera is looking at
+    look_at: Point3,
+    /// Camera-relative "up" direction
+    vup: Vec3,
 }
 
 impl CameraBuilder {
@@ -41,6 +47,9 @@ impl CameraBuilder {
             samples_per_pixel: 10,
             max_depth: 10,
             vertical_fov: 90.0,
+            look_from: Point3::new(0.0, 0.0, 0.0),
+            look_at: Point3::new(0.0, 0.0, -1.0),
+            vup: Vec3::new(0.0, 1.0, 0.0),
         }
     }
 
@@ -69,6 +78,21 @@ impl CameraBuilder {
         self
     }
 
+    pub fn look_from(mut self, x: f64, y: f64, z: f64) -> CameraBuilder {
+        self.look_from = Point3::new(x, y, z);
+        self
+    }
+
+    pub fn look_at(mut self, x: f64, y: f64, z: f64) -> CameraBuilder {
+        self.look_at = Point3::new(x, y, z);
+        self
+    }
+
+    pub fn vup(mut self, x: f64, y: f64, z: f64) -> CameraBuilder {
+        self.vup = Vec3::new(x, y, z);
+        self
+    }
+
     pub fn initialize(&self) -> Camera {
         let aspect_ratio = self.aspect_ratio;
         let image_height = self.image_height;
@@ -80,7 +104,8 @@ impl CameraBuilder {
         let max_depth = self.max_depth;
 
         // use vertical fov to calculate viewport height
-        let focal_length = 1.0;
+        let camera_delta_v = Vec3::from(self.look_from) - Vec3::from(self.look_at);
+        let focal_length = camera_delta_v.length();
         let theta = degrees_to_radians(self.vertical_fov);
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h * focal_length;
@@ -95,23 +120,28 @@ impl CameraBuilder {
 
         // dbg!((viewport_width, viewport_height));
 
+        // calculate u,v,w unit basis vectors for camera coordinate frame
+        let w = camera_delta_v.unit();
+        let u = self.vup.cross(&w).unit();
+        let v = w.cross(&u);
+
         // vectors along viewport edges
-        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+        // vector across viewport horizontal edge
+        let viewport_u = viewport_width * u;
+        // vector down viewport vertical edge
+        let viewport_v = viewport_height * -v;
 
         // delta vectors between pixels
         let pixel_delta_u = viewport_u / image_width;
         let pixel_delta_v = viewport_v / image_height;
 
-        let center = Point3::new(0.0, 0.0, 0.0);
+        let center = self.look_from;
 
         // location of upper left pixel
         // subtract focal to move from camera to viewport
         // subtract half viewport u + v to move from center to upper left corner
-        let viewport_upper_left = Vec3::from(center)
-            - Vec3::new(0.0, 0.0, focal_length)
-            - viewport_u / 2.0
-            - viewport_v / 2.0;
+        let viewport_upper_left =
+            Vec3::from(center) - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
 
         let pixel_00 = Point3::from(viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v));
 

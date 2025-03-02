@@ -4,6 +4,7 @@ use ray_tracer::geo::HittableList;
 use ray_tracer::geo::MaterialType;
 use ray_tracer::geo::Point3;
 use ray_tracer::geo::Sphere;
+use ray_tracer::geo::Vec3;
 
 fn main() {
     test_spheres();
@@ -54,6 +55,9 @@ fn test_spheres() {
         .samples_per_pixel(10)
         .max_depth(50)
         .vertical_fov(90.0)
+        .look_from(0.0, 0.0, 0.0)
+        .look_at(0.0, 0.0, -1.0)
+        .vup(0.0, 1.0, 0.0)
         .initialize();
 
     // camera.debug(&world, 100, 200);

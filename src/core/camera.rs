@@ -154,42 +154,46 @@ impl Camera {
         writeln!(out, "{x_max} {y_max}").unwrap();
         writeln!(out, "{max_value}").unwrap();
 
-        let progress = Progress::new(y_max);
+        // wrap render in block so it drops progress thread correctly
+        // printing the final progress bar update before saved message
+        {
+            let progress = Progress::new(y_max);
+            let _progress_thread = progress.render(15);
 
-        let rows: Vec<String> = (0..y_max)
-            .into_par_iter()
-            .map(|y| {
-                let mut row = String::new();
+            let rows: Vec<String> = (0..y_max)
+                .into_par_iter()
+                .map(|y| {
+                    let mut row = String::new();
 
-                for x in 0..x_max {
-                    let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
+                    for x in 0..x_max {
+                        let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
 
-                    for _sample in 0..self.samples_per_pixel {
-                        let ray = self.get_ray(x, y);
-                        let color = ray_color(&ray, world, self.max_depth);
-                        pixel_vec3 += Vec3::from(color);
+                        for _sample in 0..self.samples_per_pixel {
+                            let ray = self.get_ray(x, y);
+                            let color = ray_color(&ray, world, self.max_depth);
+                            pixel_vec3 += Vec3::from(color);
+                        }
+
+                        let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
+                        let pixel = Color::from(pixel_vec3);
+                        row.push_str(&format!("{pixel}\n"));
                     }
 
-                    let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
-                    let pixel = Color::from(pixel_vec3);
-                    row.push_str(&format!("{pixel}\n"));
-                }
+                    // row done, update progress
+                    progress.inc();
 
-                // row done, update progress
-                let current = progress.inc();
-                eprint!("\r{}", progress.bar(current));
+                    row
+                })
+                .collect();
 
-                row
-            })
-            .collect();
+            // write rows out in order
+            for row in rows {
+                write!(out, "{}", row).unwrap();
+            }
 
-        // write rows out in order
-        for row in rows {
-            write!(out, "{}", row).unwrap();
+            // flush buffer to stdout
+            out.flush().unwrap();
         }
-
-        // flush buffer to stdout
-        out.flush().unwrap();
 
         eprintln!();
         eprintln!("saved");

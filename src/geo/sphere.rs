@@ -12,12 +12,43 @@ pub struct Sphere {
     material: material::Type,
 }
 
-impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: material::Type) -> Sphere {
+pub struct SphereBuilder {
+    center: Option<Point3>,
+    radius: Option<f64>,
+    material: Option<material::Type>,
+}
+
+impl SphereBuilder {
+    pub fn build(&self) -> Sphere {
         Sphere {
-            center,
-            radius: radius.max(0.0),
-            material,
+            center: self.center.unwrap_or(Point3::new(0.0, 0.0, 0.0)),
+            radius: self.radius.unwrap_or(0.0).max(0.0),
+            material: self.material.unwrap_or(material::Type::empty()),
+        }
+    }
+
+    pub fn center(mut self, x: f64, y: f64, z: f64) -> Self {
+        self.center = Some(Point3::new(x, y, z));
+        self
+    }
+
+    pub fn radius(mut self, radius: f64) -> Self {
+        self.radius = Some(radius);
+        self
+    }
+
+    pub fn material(mut self, material: material::Type) -> Self {
+        self.material = Some(material);
+        self
+    }
+}
+
+impl Sphere {
+    pub fn builder() -> SphereBuilder {
+        SphereBuilder {
+            center: None,
+            radius: None,
+            material: None,
         }
     }
 
@@ -89,15 +120,13 @@ mod tests {
 
     #[test]
     fn test_sphere_radius_minimum() {
-        let material = material::Type::empty();
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), -10.0, material);
+        let sphere = Sphere::builder().radius(-10.0).build();
         assert_eq!(sphere.radius, 0.0);
     }
 
     #[test]
     fn test_sphere_hit() {
-        let material = material::Type::empty();
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
+        let sphere = Sphere::builder().center(0.0, 0.0, -1.0).radius(0.5).build();
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, 0.0, 100.0);
@@ -110,8 +139,7 @@ mod tests {
 
     #[test]
     fn test_sphere_miss() {
-        let material = material::Type::empty();
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
+        let sphere = Sphere::builder().center(0.0, 0.0, -1.0).radius(0.5).build();
         let ray = Ray::new(Point3::new(0.0, 1.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, 0.0, 100.0);
@@ -125,7 +153,13 @@ mod tests {
             reflectance: 1.0,
             uniform: false,
         });
-        let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
+
+        let sphere = Sphere::builder()
+            .center(0.0, 0.0, -1.0)
+            .radius(0.5)
+            .material(material)
+            .build();
+
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, 0.0, 100.0);

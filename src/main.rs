@@ -2,7 +2,6 @@ use ray_tracer::core::Camera;
 use ray_tracer::core::Color;
 use ray_tracer::geo::material;
 use ray_tracer::geo::HittableList;
-use ray_tracer::geo::Point3;
 use ray_tracer::geo::Sphere;
 
 fn main() {
@@ -35,35 +34,45 @@ fn main() {
         fuzz: 0.4,
     });
 
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, -100.5, -1.0),
-        100.0,
-        mat_ground,
-    )));
+    world.add(Box::new(
+        Sphere::builder()
+            .center(0.0, -100.5, -1.0)
+            .radius(100.0)
+            .material(mat_ground)
+            .build(),
+    ));
 
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, 0.0, -1.2),
-        0.5,
-        mat_center,
-    )));
+    world.add(Box::new(
+        Sphere::builder()
+            .center(0.0, 0.0, -1.2)
+            .radius(0.5)
+            .material(mat_center)
+            .build(),
+    ));
 
-    world.add(Box::new(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        0.5,
-        mat_left,
-    )));
+    world.add(Box::new(
+        Sphere::builder()
+            .center(-1.0, 0.0, -1.0)
+            .radius(0.5)
+            .material(mat_left)
+            .build(),
+    ));
 
-    world.add(Box::new(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        0.4,
-        mat_bubble,
-    )));
+    world.add(Box::new(
+        Sphere::builder()
+            .center(-1.0, 0.0, -1.0)
+            .radius(0.4)
+            .material(mat_bubble)
+            .build(),
+    ));
 
-    world.add(Box::new(Sphere::new(
-        Point3::new(1.0, 0.0, -1.0),
-        0.5,
-        mat_right,
-    )));
+    world.add(Box::new(
+        Sphere::builder()
+            .center(1.0, 0.0, -1.0)
+            .radius(0.5)
+            .material(mat_right)
+            .build(),
+    ));
 
     let camera = Camera::new()
         .aspect_ratio(16.0 / 9.0)

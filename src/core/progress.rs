@@ -44,8 +44,9 @@ impl Progress {
     pub fn bar(&self, frame: usize) -> String {
         let bar_width = 48;
 
-        let current = self.state.cur.load(atomic::Ordering::Relaxed);
-        let percent = current as f64 / self.state.max as f64;
+        let cur = self.state.cur.load(atomic::Ordering::Relaxed);
+        let max = self.state.max;
+        let percent = cur as f64 / max as f64;
         let filled = (percent * bar_width as f64).round() as usize;
         let empty = format!("\x1b[90m{}\x1b[0m", "─".repeat(bar_width - filled));
         let filled = "━".repeat(filled);
@@ -61,7 +62,9 @@ impl Progress {
 
         let percent = format!("{percent:>3}%");
 
-        format!("{spinner} {percent} {filled}{empty}  ")
+        let digits = max.to_string().len();
+        let cur = format!("{:digits$}", cur, digits = digits);
+        format!("{spinner} {percent} {filled}{empty} {cur}/{max} ")
     }
 
     /// Spawn thread that draws at consistent fps
@@ -77,7 +80,8 @@ impl Progress {
                 let max = progress.state.max;
                 let done = cur >= max;
 
-                eprint!("\r{}", progress.bar(frame));
+                // carriage return and clear line from cursor to end
+                eprint!("\r\x1b[K{}", progress.bar(frame));
 
                 if done {
                     break;

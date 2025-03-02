@@ -29,50 +29,50 @@ fn main() {
     });
 
     let mat_right = material::Type::from(material::MetalParams {
-        albedo: Color::new(0.8, 0.6, 0.2),
+        albedo: Color::new(0.75, 0.75, 0.75),
         reflectance: 1.0,
-        fuzz: 0.4,
+        fuzz: 0.3,
     });
 
-    world.add(Box::new(
+    world.add(
         Sphere::builder()
             .center(0.0, -100.5, -1.0)
             .radius(100.0)
             .material(mat_ground)
             .build(),
-    ));
+    );
 
-    world.add(Box::new(
+    world.add(
         Sphere::builder()
             .center(0.0, 0.0, -1.2)
             .radius(0.5)
             .material(mat_center)
             .build(),
-    ));
+    );
 
-    world.add(Box::new(
+    world.add(
         Sphere::builder()
             .center(-1.0, 0.0, -1.0)
             .radius(0.5)
             .material(mat_left)
             .build(),
-    ));
+    );
 
-    world.add(Box::new(
+    world.add(
         Sphere::builder()
             .center(-1.0, 0.0, -1.0)
             .radius(0.4)
             .material(mat_bubble)
             .build(),
-    ));
+    );
 
-    world.add(Box::new(
+    world.add(
         Sphere::builder()
             .center(1.0, 0.0, -1.0)
             .radius(0.5)
             .material(mat_right)
             .build(),
-    ));
+    );
 
     let camera = Camera::new()
         .aspect_ratio(16.0 / 9.0)

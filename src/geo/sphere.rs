@@ -1,6 +1,6 @@
 use crate::geo::hittable;
+use crate::geo::material;
 use crate::geo::Interval;
-use crate::geo::MaterialType;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
@@ -9,11 +9,11 @@ use crate::geo::Vec3;
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    material: MaterialType,
+    material: material::Type,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: MaterialType) -> Sphere {
+    pub fn new(center: Point3, radius: f64, material: material::Type) -> Sphere {
         Sphere {
             center,
             radius: radius.max(0.0),
@@ -84,19 +84,19 @@ mod tests {
     fn test_sphere_default() {
         let sphere = <Sphere>::default();
         assert_eq!(sphere.radius, 0.0);
-        assert_eq!(sphere.material, MaterialType::empty());
+        assert_eq!(sphere.material, material::Type::empty());
     }
 
     #[test]
     fn test_sphere_radius_minimum() {
-        let material = MaterialType::empty();
+        let material = material::Type::empty();
         let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), -10.0, material);
         assert_eq!(sphere.radius, 0.0);
     }
 
     #[test]
     fn test_sphere_hit() {
-        let material = MaterialType::empty();
+        let material = material::Type::empty();
         let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_sphere_miss() {
-        let material = MaterialType::empty();
+        let material = material::Type::empty();
         let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
         let ray = Ray::new(Point3::new(0.0, 1.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
@@ -120,7 +120,11 @@ mod tests {
 
     #[test]
     fn test_sphere_material() {
-        let material = MaterialType::lambertian(Color::new(1.0, 0.0, 0.0), 1.0, false);
+        let material = material::Type::from(material::LambertianParams {
+            albedo: Color::new(1.0, 0.0, 0.0),
+            reflectance: 1.0,
+            uniform: false,
+        });
         let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material);
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 

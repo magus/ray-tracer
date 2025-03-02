@@ -1,23 +1,39 @@
 use ray_tracer::core::Camera;
 use ray_tracer::core::Color;
+use ray_tracer::geo::material;
 use ray_tracer::geo::HittableList;
-use ray_tracer::geo::MaterialType;
 use ray_tracer::geo::Point3;
 use ray_tracer::geo::Sphere;
-use ray_tracer::geo::Vec3;
 
 fn main() {
-    test_spheres();
-}
-
-fn test_spheres() {
     let mut world = HittableList::new();
 
-    let mat_ground = MaterialType::lambertian(Color::new(0.8, 0.8, 0.0), 1.0, false);
-    let mat_center = MaterialType::lambertian(Color::new(0.1, 0.2, 0.5), 1.0, false);
-    let mat_left = MaterialType::dielectric(1.5);
-    let mat_bubble = MaterialType::dielectric(1.0 / 1.5);
-    let mat_right = MaterialType::metal(Color::new(0.8, 0.6, 0.2), 1.0, 1.0);
+    let mat_ground = material::Type::from(material::LambertianParams {
+        albedo: Color::new(0.8, 0.8, 0.0),
+        reflectance: 1.0,
+        uniform: false,
+    });
+
+    let mat_center = material::Type::from(material::LambertianParams {
+        albedo: Color::new(0.1, 0.2, 0.5),
+        reflectance: 1.0,
+        uniform: false,
+    });
+
+    let mat_left = material::Type::from(material::DielectricParams {
+        refraction_index: 1.5,
+    });
+
+    let mat_bubble = material::Type::from(material::DielectricParams {
+        // air to glass
+        refraction_index: 1.0 / 1.5,
+    });
+
+    let mat_right = material::Type::from(material::MetalParams {
+        albedo: Color::new(0.8, 0.6, 0.2),
+        reflectance: 1.0,
+        fuzz: 0.4,
+    });
 
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, -100.5, -1.0),
@@ -54,44 +70,10 @@ fn test_spheres() {
         .image_height(400)
         .samples_per_pixel(10)
         .max_depth(50)
-        .vertical_fov(90.0)
-        .look_from(0.0, 0.0, 0.0)
+        .vertical_fov(20.0)
+        .look_from(-2.0, 2.0, 1.0)
         .look_at(0.0, 0.0, -1.0)
         .vup(0.0, 1.0, 0.0)
-        .initialize();
-
-    // camera.debug(&world, 100, 200);
-
-    camera.render(&world);
-}
-
-// vertical fov test
-fn test_vertical_fov() {
-    let mut world = HittableList::new();
-
-    let r = (std::f64::consts::PI / 4.0).cos();
-
-    let mat_left = MaterialType::lambertian(Color::new(0.0, 0.0, 1.0), 1.0, false);
-    let mat_right = MaterialType::lambertian(Color::new(1.0, 0.0, 0.0), 1.0, false);
-
-    world.add(Box::new(Sphere::new(
-        Point3::new(-r, 0.0, -1.0),
-        r,
-        mat_left,
-    )));
-
-    world.add(Box::new(Sphere::new(
-        Point3::new(r, 0.0, -1.0),
-        r,
-        mat_right,
-    )));
-
-    let camera = Camera::new()
-        .aspect_ratio(16.0 / 9.0)
-        .image_height(400)
-        .samples_per_pixel(10)
-        .max_depth(50)
-        .vertical_fov(90.0)
         .initialize();
 
     // camera.debug(&world, 100, 200);

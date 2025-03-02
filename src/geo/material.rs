@@ -10,7 +10,7 @@ use crate::geo::Vec3;
 // can use it in a struct without awkward Box or lifetimes
 #[allow(private_interfaces)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum MaterialType {
+pub enum Type {
     Empty(Empty),
     Debug(Debug),
     Lambertian(Lambertian),
@@ -18,37 +18,128 @@ pub enum MaterialType {
     Dielectric(Dielectric),
 }
 
-impl MaterialType {
-    // Helper constructors for external use.
-    pub fn empty() -> Self {
-        MaterialType::Empty(Empty::new())
-    }
-
-    pub fn debug() -> Self {
-        MaterialType::Debug(Debug::new())
-    }
-
-    pub fn lambertian(albedo: Color, reflectance: f64, uniform: bool) -> Self {
-        MaterialType::Lambertian(Lambertian::new(albedo, reflectance, uniform))
-    }
-
-    pub fn metal(albedo: Color, reflectance: f64, fuzz: f64) -> Self {
-        MaterialType::Metal(Metal::new(albedo, reflectance, fuzz))
-    }
-
-    pub fn dielectric(refraction_index: f64) -> Self {
-        MaterialType::Dielectric(Dielectric::new(refraction_index))
+impl Default for Type {
+    fn default() -> Self {
+        Type::Empty(Empty {})
     }
 }
 
-impl MaterialType {
+pub enum Params {
+    Lambertian(LambertianParams),
+    Metal(MetalParams),
+    Dielectric(DielectricParams),
+}
+
+impl From<LambertianParams> for Params {
+    fn from(p: LambertianParams) -> Self {
+        Params::Lambertian(p)
+    }
+}
+
+impl From<MetalParams> for Params {
+    fn from(p: MetalParams) -> Self {
+        Params::Metal(p)
+    }
+}
+
+impl From<DielectricParams> for Params {
+    fn from(p: DielectricParams) -> Self {
+        Params::Dielectric(p)
+    }
+}
+
+impl Type {
+    // Helper constructors for external use.
+    pub fn empty() -> Self {
+        Type::Empty(Empty {})
+    }
+
+    pub fn debug() -> Self {
+        Type::Debug(Debug {})
+    }
+
+    pub fn from<P>(params: P) -> Self
+    where
+        P: Into<Params>,
+    {
+        match params.into() {
+            Params::Lambertian(params) => {
+                return Type::Lambertian(Lambertian {
+                    albedo: params.albedo,
+                    reflectance: params.reflectance,
+                    uniform: params.uniform,
+                })
+            }
+
+            Params::Metal(params) => {
+                return Type::Metal(Metal {
+                    albedo: params.albedo,
+                    reflectance: params.reflectance,
+                    fuzz: params.fuzz.min(1.0),
+                })
+            }
+
+            Params::Dielectric(params) => {
+                return Type::Dielectric(Dielectric {
+                    refraction_index: params.refraction_index,
+                })
+            }
+        }
+    }
+}
+
+impl Type {
     pub fn scatter(&self, ray: &Ray, hit: HitRecord) -> Option<ScatterRecord> {
         match self {
-            MaterialType::Empty(m) => m.scatter(ray, hit),
-            MaterialType::Debug(m) => m.scatter(ray, hit),
-            MaterialType::Lambertian(m) => m.scatter(ray, hit),
-            MaterialType::Metal(m) => m.scatter(ray, hit),
-            MaterialType::Dielectric(m) => m.scatter(ray, hit),
+            Type::Empty(m) => m.scatter(ray, hit),
+            Type::Debug(m) => m.scatter(ray, hit),
+            Type::Lambertian(m) => m.scatter(ray, hit),
+            Type::Metal(m) => m.scatter(ray, hit),
+            Type::Dielectric(m) => m.scatter(ray, hit),
+        }
+    }
+}
+
+pub struct LambertianParams {
+    pub albedo: Color,
+    pub reflectance: f64,
+    pub uniform: bool,
+}
+
+impl Default for LambertianParams {
+    fn default() -> Self {
+        Self {
+            albedo: Color::new(1.0, 0.0, 0.0),
+            reflectance: 1.0,
+            uniform: false,
+        }
+    }
+}
+
+pub struct MetalParams {
+    pub albedo: Color,
+    pub reflectance: f64,
+    pub fuzz: f64,
+}
+
+impl Default for MetalParams {
+    fn default() -> Self {
+        Self {
+            albedo: Color::new(1.0, 0.0, 0.0),
+            reflectance: 1.0,
+            fuzz: 0.0,
+        }
+    }
+}
+
+pub struct DielectricParams {
+    pub refraction_index: f64,
+}
+
+impl Default for DielectricParams {
+    fn default() -> Self {
+        Self {
+            refraction_index: 1.0,
         }
     }
 }
@@ -60,26 +151,12 @@ pub struct ScatterRecord {
     pub color: Option<Color>,
 }
 
-impl ScatterRecord {}
-
 pub trait Material {
     fn scatter(&self, ray_in: &Ray, hit_record: HitRecord) -> Option<ScatterRecord>;
 }
 
-impl Default for MaterialType {
-    fn default() -> Self {
-        MaterialType::Empty(Empty::new())
-    }
-}
-
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 struct Empty {}
-
-impl Empty {
-    pub fn new() -> Empty {
-        Empty {}
-    }
-}
 
 impl Material for Empty {
     fn scatter(&self, _ray_in: &Ray, _hit_record: HitRecord) -> Option<ScatterRecord> {
@@ -89,12 +166,6 @@ impl Material for Empty {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 struct Debug {}
-
-impl Debug {
-    pub fn new() -> Debug {
-        Debug {}
-    }
-}
 
 impl Material for Debug {
     fn scatter(&self, ray_in: &Ray, hit_record: HitRecord) -> Option<ScatterRecord> {
@@ -120,16 +191,6 @@ struct Lambertian {
     reflectance: f64,
     // use a random unit vector instead of a random unit vector added to surface normal
     uniform: bool,
-}
-
-impl Lambertian {
-    pub fn new(albedo: Color, reflectance: f64, uniform: bool) -> Lambertian {
-        Lambertian {
-            albedo,
-            reflectance,
-            uniform,
-        }
-    }
 }
 
 impl Material for Lambertian {
@@ -169,16 +230,6 @@ struct Metal {
     fuzz: f64,
 }
 
-impl Metal {
-    pub fn new(albedo: Color, reflectance: f64, fuzz: f64) -> Metal {
-        Metal {
-            albedo,
-            reflectance,
-            fuzz: fuzz.min(1.0),
-        }
-    }
-}
-
 impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, hit_record: HitRecord) -> Option<ScatterRecord> {
         let direction = ray_in.direction().reflect(&hit_record.normal);
@@ -200,12 +251,6 @@ struct Dielectric {
     // refraction index of material over refraction index of enclosing media
     // snell's law https://en.wikipedia.org/wiki/Snell%27s_law
     refraction_index: f64,
-}
-
-impl Dielectric {
-    pub fn new(refraction_index: f64) -> Dielectric {
-        Dielectric { refraction_index }
-    }
 }
 
 impl Material for Dielectric {

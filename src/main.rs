@@ -49,6 +49,7 @@ fn main() {
         .image_height(400)
         .samples_per_pixel(10)
         .max_depth(50)
+        .vertical_fov(90.0)
         .initialize();
 
     // camera.debug(&world, 100, 200);

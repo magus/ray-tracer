@@ -1,6 +1,7 @@
 use crate::core::random_f64;
 use crate::core::Color;
 use crate::core::Progress;
+use crate::geo::degrees_to_radians;
 use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
@@ -28,6 +29,8 @@ pub struct CameraBuilder {
     samples_per_pixel: u32,
     /// Maximum number of ray bounces into scene
     max_depth: u32,
+    /// Vertical view angle (field of view, fov)
+    vertical_fov: f64,
 }
 
 impl CameraBuilder {
@@ -37,6 +40,7 @@ impl CameraBuilder {
             image_height: 100.0,
             samples_per_pixel: 10,
             max_depth: 10,
+            vertical_fov: 90.0,
         }
     }
 
@@ -60,6 +64,11 @@ impl CameraBuilder {
         self
     }
 
+    pub fn vertical_fov(mut self, vertical_fov: f64) -> CameraBuilder {
+        self.vertical_fov = vertical_fov;
+        self
+    }
+
     pub fn initialize(&self) -> Camera {
         let aspect_ratio = self.aspect_ratio;
         let image_height = self.image_height;
@@ -70,13 +79,18 @@ impl CameraBuilder {
 
         let max_depth = self.max_depth;
 
+        // use vertical fov to calculate viewport height
+        let focal_length = 1.0;
+        let theta = degrees_to_radians(self.vertical_fov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
+
         // camera center aka eye point where all rays are cast from
         // right-handed coordinates
         // y-axis = vertical, x-axis = horizontal, z-axis orthogonal to viewport
         // use actual aspect ratio of image to calculate viewport size
         // may differ from aspect ratio due to rounding
         let real_aspect_ratio = image_width / image_height;
-        let viewport_height = 2.0;
         let viewport_width = viewport_height * real_aspect_ratio;
 
         // dbg!((viewport_width, viewport_height));
@@ -89,7 +103,6 @@ impl CameraBuilder {
         let pixel_delta_u = viewport_u / image_width;
         let pixel_delta_v = viewport_v / image_height;
 
-        let focal_length = 1.0;
         let center = Point3::new(0.0, 0.0, 0.0);
 
         // location of upper left pixel

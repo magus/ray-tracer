@@ -6,6 +6,10 @@ use ray_tracer::geo::Point3;
 use ray_tracer::geo::Sphere;
 
 fn main() {
+    test_spheres();
+}
+
+fn test_spheres() {
     let mut world = HittableList::new();
 
     let mat_ground = MaterialType::lambertian(Color::new(0.8, 0.8, 0.0), 1.0, false);
@@ -41,6 +45,40 @@ fn main() {
     world.add(Box::new(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),
         0.5,
+        mat_right,
+    )));
+
+    let camera = Camera::new()
+        .aspect_ratio(16.0 / 9.0)
+        .image_height(400)
+        .samples_per_pixel(10)
+        .max_depth(50)
+        .vertical_fov(90.0)
+        .initialize();
+
+    // camera.debug(&world, 100, 200);
+
+    camera.render(&world);
+}
+
+// vertical fov test
+fn test_vertical_fov() {
+    let mut world = HittableList::new();
+
+    let r = (std::f64::consts::PI / 4.0).cos();
+
+    let mat_left = MaterialType::lambertian(Color::new(0.0, 0.0, 1.0), 1.0, false);
+    let mat_right = MaterialType::lambertian(Color::new(1.0, 0.0, 0.0), 1.0, false);
+
+    world.add(Box::new(Sphere::new(
+        Point3::new(-r, 0.0, -1.0),
+        r,
+        mat_left,
+    )));
+
+    world.add(Box::new(Sphere::new(
+        Point3::new(r, 0.0, -1.0),
+        r,
         mat_right,
     )));
 

@@ -2,6 +2,7 @@ use crate::core::random_f64;
 use crate::core::Color;
 use crate::core::Progress;
 use crate::geo::degrees_to_radians;
+use crate::geo::random_unit_disk;
 use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
@@ -16,10 +17,13 @@ pub struct Camera {
     samples_per_pixel: u32,
     pixel_samples_scale: f64,
     max_depth: u32,
-    center: Point3,
-    pixel_00: Point3,
+    center: Vec3,
+    pixel_00: Vec3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    defocus_angle: f64,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
 }
 
 pub struct CameraBuilder {
@@ -37,6 +41,10 @@ pub struct CameraBuilder {
     look_at: Point3,
     /// Camera-relative "up" direction
     vup: Vec3,
+    /// Variation angle of rays through each pixel
+    defocus_angle: f64,
+    /// Distance from camera lookfrom point to plane of perfect focus
+    focus_distance: f64,
 }
 
 impl CameraBuilder {
@@ -50,6 +58,8 @@ impl CameraBuilder {
             look_from: Point3::new(0.0, 0.0, 0.0),
             look_at: Point3::new(0.0, 0.0, -1.0),
             vup: Vec3::new(0.0, 1.0, 0.0),
+            defocus_angle: 0.0,
+            focus_distance: 10.0,
         }
     }
 
@@ -93,6 +103,16 @@ impl CameraBuilder {
         self
     }
 
+    pub fn defocus_angle(mut self, defocus_angle: f64) -> CameraBuilder {
+        self.defocus_angle = defocus_angle;
+        self
+    }
+
+    pub fn focus_distance(mut self, focus_distance: f64) -> CameraBuilder {
+        self.focus_distance = focus_distance;
+        self
+    }
+
     pub fn initialize(&self) -> Camera {
         let aspect_ratio = self.aspect_ratio;
         let image_height = self.image_height;
@@ -105,10 +125,9 @@ impl CameraBuilder {
 
         // use vertical fov to calculate viewport height
         let camera_delta_v = Vec3::from(self.look_from) - Vec3::from(self.look_at);
-        let focal_length = camera_delta_v.length();
         let theta = degrees_to_radians(self.vertical_fov);
         let h = (theta / 2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * self.focus_distance;
 
         // camera center aka eye point where all rays are cast from
         // right-handed coordinates
@@ -135,15 +154,21 @@ impl CameraBuilder {
         let pixel_delta_u = viewport_u / image_width;
         let pixel_delta_v = viewport_v / image_height;
 
-        let center = self.look_from;
+        // Calculate the camera defocus disk basis vectors.
+        let defocus_angle = self.defocus_angle;
+        let defocus_radius = self.focus_distance * (degrees_to_radians(defocus_angle / 2.0)).tan();
+        let defocus_disk_u = u * defocus_radius;
+        let defocus_disk_v = v * defocus_radius;
+
+        let center = Vec3::from(self.look_from);
 
         // location of upper left pixel
         // subtract focal to move from camera to viewport
         // subtract half viewport u + v to move from center to upper left corner
         let viewport_upper_left =
-            Vec3::from(center) - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
+            center - (self.focus_distance * w) - viewport_u / 2.0 - viewport_v / 2.0;
 
-        let pixel_00 = Point3::from(viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v));
+        let pixel_00 = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         Camera {
             image_width,
@@ -155,6 +180,9 @@ impl CameraBuilder {
             pixel_00,
             pixel_delta_u,
             pixel_delta_v,
+            defocus_angle,
+            defocus_disk_u,
+            defocus_disk_v,
         }
     }
 }
@@ -230,16 +258,28 @@ impl Camera {
     }
 
     fn get_ray(&self, x: u32, y: u32) -> Ray {
-        // ray originating from camera center directed at
-        // randomly sampled point around pixel (x, y)
+        // ray originating from defocus disk and directed
+        // at a randomly sampled point around pixel (x, y)
         let offset = sample_square();
 
-        let pixel_sample = Vec3::from(self.pixel_00)
+        let pixel_sample = self.pixel_00
             + ((x as f64 + offset.x()) * self.pixel_delta_u)
             + ((y as f64 + offset.y()) * self.pixel_delta_v);
 
-        let ray_direction = pixel_sample - Vec3::from(self.center);
-        Ray::new(self.center, ray_direction)
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
+
+        let ray_direction = pixel_sample - ray_origin;
+        Ray::new(Point3::from(ray_origin), ray_direction)
+    }
+
+    fn defocus_disk_sample(&self) -> Vec3 {
+        let p = random_unit_disk();
+        let defocus_p = self.center + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v);
+        defocus_p
     }
 }
 

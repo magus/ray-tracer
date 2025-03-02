@@ -20,3 +20,4 @@ cargo test
 
 - build release cli
 - allow arguments for samples per pixel, max depth, dimensions, camera, etc.
+- keyboard / cli control to adjust camera, edit items in scene, add/remove items to scene, etc.

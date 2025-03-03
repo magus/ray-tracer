@@ -63,12 +63,18 @@ fn main() {
             .build(),
     );
 
-    let item_count = 22;
+    let item_count = 11;
     let min_distance_multiplier = 1.0;
 
     for x in -item_count..item_count {
         for z in -item_count..item_count {
-            let sphere = random_sphere(x, z);
+            let sphere = random_sphere(RandomSphereParams {
+                x: x as f64,
+                z: z as f64,
+                glass_chance: 0.4,
+                metal_chance: 0.3,
+                lambertian_chance: 0.3,
+            });
 
             let mut include = true;
 
@@ -125,38 +131,48 @@ fn main() {
     camera.render(&world);
 }
 
-fn random_sphere(x: i32, z: i32) -> Sphere {
+struct RandomSphereParams {
+    x: f64,
+    z: f64,
+    glass_chance: f64,
+    metal_chance: f64,
+    lambertian_chance: f64,
+}
+fn random_sphere(params: RandomSphereParams) -> Sphere {
     let radius = random_f64_range(0.1, 0.3);
 
-    let choice = random_f64();
-
     let center = Vec3::new(
-        x as f64 + 0.9 * random_f64(),
+        params.x + 0.9 * random_f64(),
         radius,
-        z as f64 + 0.9 * random_f64(),
+        params.z + 0.9 * random_f64(),
     );
 
-    let material = if choice > 0.95 {
-        // glass
+    let glass_chance = 1.0 - params.glass_chance;
+    let metal_chance = glass_chance - params.metal_chance;
+    let lambertian_chance = metal_chance - params.lambertian_chance;
+
+    // dbg!(glass_chance, metal_chance, lambertian_chance);
+
+    let material_chance = random_f64();
+
+    let material = if material_chance > glass_chance {
         material::Type::from(material::DielectricParams {
             refraction_index: 1.5,
         })
-    } else if choice > 0.8 {
-        // metal
+    } else if material_chance > metal_chance {
         material::Type::from(material::MetalParams {
             albedo: Color::from(Vec3::random_range(0.5, 1.0)),
             reflectance: 1.0,
             fuzz: random_f64_range(0.0, 0.5),
         })
-    } else {
-        // diffuse
-        // auto albedo = color::random() * color::random();
-        // sphere_material = make_shared<lambertian>(albedo);
+    } else if material_chance > lambertian_chance {
         material::Type::from(material::LambertianParams {
             albedo: Color::from(Vec3::random() * Vec3::random()),
             reflectance: 1.0,
             uniform: false,
         })
+    } else {
+        panic!("material chance not handled ({material_chance})");
     };
 
     Sphere::builder()

@@ -26,10 +26,11 @@ fn main() {
             .build(),
     );
 
+    let radius = random_f64_range(0.7, 1.3);
     world.add(
         Sphere::builder()
-            .center(-4.0, 1.0, 0.0)
-            .radius(1.0)
+            .center(-4.0, radius, 0.0)
+            .radius(radius)
             .material(material::Type::from(material::LambertianParams {
                 albedo: Color::new(0.4, 0.2, 0.1),
                 reflectance: 1.0,
@@ -38,20 +39,22 @@ fn main() {
             .build(),
     );
 
+    let radius = random_f64_range(0.7, 1.3);
     world.add(
         Sphere::builder()
-            .center(0.0, 1.0, 0.0)
-            .radius(1.0)
+            .center(0.0, radius, 0.0)
+            .radius(radius)
             .material(material::Type::from(material::DielectricParams {
                 refraction_index: 1.5,
             }))
             .build(),
     );
 
+    let radius = random_f64_range(0.7, 1.3);
     world.add(
         Sphere::builder()
-            .center(4.0, 1.0, 0.0)
-            .radius(1.0)
+            .center(4.0, radius, 0.0)
+            .radius(radius)
             .material(material::Type::from(material::MetalParams {
                 albedo: Color::new(0.7, 0.6, 0.5),
                 reflectance: 1.0,

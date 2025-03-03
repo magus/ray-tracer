@@ -22,6 +22,7 @@ fn main() {
                 reflectance: 1.0,
                 uniform: false,
             }))
+            .collision(false)
             .build(),
     );
 
@@ -72,8 +73,8 @@ fn main() {
             for object in world.objects() {
                 // detect object is sphere
                 if let Some(object_sphere) = object.as_any().downcast_ref::<Sphere>() {
-                    // skip the ground
-                    if object_sphere.radius() == ground_radius {
+                    // skip spheres that are not collision (i.e. ground)
+                    if !object_sphere.collision() {
                         continue;
                     }
 

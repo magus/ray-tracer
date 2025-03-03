@@ -10,12 +10,14 @@ pub struct Sphere {
     center: Point3,
     radius: f64,
     material: material::Type,
+    collision: bool,
 }
 
 pub struct SphereBuilder {
     center: Option<Point3>,
     radius: Option<f64>,
     material: Option<material::Type>,
+    collision: Option<bool>,
 }
 
 impl SphereBuilder {
@@ -24,6 +26,7 @@ impl SphereBuilder {
             center: self.center.unwrap_or(Point3::new(0.0, 0.0, 0.0)),
             radius: self.radius.unwrap_or(0.0).max(0.0),
             material: self.material.unwrap_or(material::Type::empty()),
+            collision: self.collision.unwrap_or(true),
         }
     }
 
@@ -41,6 +44,11 @@ impl SphereBuilder {
         self.material = Some(material);
         self
     }
+
+    pub fn collision(mut self, collision: bool) -> Self {
+        self.collision = Some(collision);
+        self
+    }
 }
 
 impl Sphere {
@@ -49,6 +57,7 @@ impl Sphere {
             center: None,
             radius: None,
             material: None,
+            collision: None,
         }
     }
 
@@ -58,6 +67,14 @@ impl Sphere {
 
     pub fn radius(&self) -> f64 {
         self.radius
+    }
+
+    pub fn material(&self) -> material::Type {
+        self.material
+    }
+
+    pub fn collision(&self) -> bool {
+        self.collision
     }
 }
 

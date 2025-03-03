@@ -10,11 +10,13 @@ use ray_tracer::geo::Vec3;
 fn main() {
     let mut world = HittableList::new();
 
+    let ground_radius = 1000.0;
+
     // ground
     world.add(
         Sphere::builder()
-            .center(0.0, -1000.0, 0.0)
-            .radius(1000.0)
+            .center(0.0, -ground_radius, 0.0)
+            .radius(ground_radius)
             .material(material::Type::from(material::LambertianParams {
                 albedo: Color::new(0.5, 0.5, 0.5),
                 reflectance: 1.0,
@@ -23,10 +25,80 @@ fn main() {
             .build(),
     );
 
-    let item_count = 11;
+    world.add(
+        Sphere::builder()
+            .center(-4.0, 1.0, 0.0)
+            .radius(1.0)
+            .material(material::Type::from(material::LambertianParams {
+                albedo: Color::new(0.4, 0.2, 0.1),
+                reflectance: 1.0,
+                uniform: false,
+            }))
+            .build(),
+    );
+
+    world.add(
+        Sphere::builder()
+            .center(0.0, 1.0, 0.0)
+            .radius(1.0)
+            .material(material::Type::from(material::DielectricParams {
+                refraction_index: 1.5,
+            }))
+            .build(),
+    );
+
+    world.add(
+        Sphere::builder()
+            .center(4.0, 1.0, 0.0)
+            .radius(1.0)
+            .material(material::Type::from(material::MetalParams {
+                albedo: Color::new(0.7, 0.6, 0.5),
+                reflectance: 1.0,
+                fuzz: 0.0,
+            }))
+            .build(),
+    );
+
+    let item_count = 22;
+    let min_distance_multiplier = 1.0;
+
     for x in -item_count..item_count {
         for z in -item_count..item_count {
-            if let Some(sphere) = random_sphere(x, z) {
+            let sphere = random_sphere(x, z);
+
+            let mut include = true;
+
+            // only add sphere if its far enough away from existing larger spheres
+            for object in world.objects() {
+                // detect object is sphere
+                if let Some(object_sphere) = object.as_any().downcast_ref::<Sphere>() {
+                    // skip the ground
+                    if object_sphere.radius() == ground_radius {
+                        continue;
+                    }
+
+                    // only add sphere if its far enough away from other spheres
+                    // adjust object_center to match the y level of generated sphere
+                    // so our distance formula is calculating the distance at same y level
+                    let radius = sphere.radius();
+                    let mut object_center = Vec3::from(object_sphere.center());
+                    object_center.y = radius;
+
+                    let distance = (Vec3::from(sphere.center()) - object_center).length();
+
+                    // min distance to ensure spheres do not overlap
+                    let sphere_distance = sphere.radius() + object_sphere.radius();
+                    let min_distance = sphere_distance * min_distance_multiplier;
+
+                    if distance < min_distance {
+                        include = false;
+                    }
+
+                    // dbg!((min_distance, sphere_distance, distance, include));
+                }
+            }
+
+            if include {
                 world.add(sphere);
             }
         }
@@ -49,8 +121,8 @@ fn main() {
     camera.render(&world);
 }
 
-fn random_sphere(x: i32, z: i32) -> Option<Sphere> {
-    let radius = 0.2;
+fn random_sphere(x: i32, z: i32) -> Sphere {
+    let radius = random_f64_range(0.1, 0.3);
 
     let choice = random_f64();
 
@@ -59,12 +131,6 @@ fn random_sphere(x: i32, z: i32) -> Option<Sphere> {
         radius,
         z as f64 + 0.9 * random_f64(),
     );
-
-    let distance = (center - Vec3::new(4.0, 0.2, 0.0)).length();
-
-    if distance <= 0.9 {
-        return None;
-    }
 
     let material = if choice > 0.95 {
         // glass
@@ -89,11 +155,9 @@ fn random_sphere(x: i32, z: i32) -> Option<Sphere> {
         })
     };
 
-    let sphere = Sphere::builder()
+    Sphere::builder()
         .center(center.x, center.y, center.z)
         .radius(radius)
         .material(material)
-        .build();
-
-    Some(sphere)
+        .build()
 }

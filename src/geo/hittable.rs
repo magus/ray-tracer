@@ -27,6 +27,7 @@ impl HitRecord {
 
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 pub struct HittableList {
@@ -45,6 +46,10 @@ impl HittableList {
     pub fn add<H: Hittable + 'static>(&mut self, object: H) {
         self.objects.push(Box::new(object));
     }
+
+    pub fn objects(&self) -> &Vec<Box<dyn Hittable>> {
+        &self.objects
+    }
 }
 
 impl Hittable for HittableList {
@@ -62,5 +67,9 @@ impl Hittable for HittableList {
         }
 
         hit_record
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

@@ -103,6 +103,10 @@ impl hittable::Hittable for Sphere {
 
         Some(hit_record)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 #[cfg(test)]

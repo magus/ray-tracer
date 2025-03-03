@@ -8,6 +8,9 @@ time (rm -f img.ppm && cargo run > img.ppm)
 cargo build --release
 time (rm -f img.ppm && ./target/release/ray-tracer > img.ppm)
 
+# one command release build render
+cargo build --release && time (rm -f img.ppm && ./target/release/ray-tracer > img.ppm)
+
 # test
 cargo test
 ```

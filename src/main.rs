@@ -26,7 +26,7 @@ fn main() {
             .build(),
     );
 
-    let radius = random_f64_range(0.7, 1.3);
+    let radius = random_f64_range(1.2, 1.4);
     world.add(
         Sphere::builder()
             .center(-4.0, radius, 0.0)
@@ -39,7 +39,7 @@ fn main() {
             .build(),
     );
 
-    let radius = random_f64_range(0.7, 1.3);
+    let radius = random_f64_range(1.0, 1.2);
     world.add(
         Sphere::builder()
             .center(0.0, radius, 0.0)
@@ -50,7 +50,7 @@ fn main() {
             .build(),
     );
 
-    let radius = random_f64_range(0.7, 1.3);
+    let radius = random_f64_range(0.8, 1.0);
     world.add(
         Sphere::builder()
             .center(4.0, radius, 0.0)
@@ -116,7 +116,7 @@ fn main() {
 
     let camera = Camera::new()
         .aspect_ratio(16.0 / 9.0)
-        .image_height(1200)
+        .image_height(1080)
         .samples_per_pixel(10)
         .max_depth(50)
         .vertical_fov(20.0)

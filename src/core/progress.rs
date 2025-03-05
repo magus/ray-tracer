@@ -67,7 +67,7 @@ impl Progress {
         let max = format_number(max);
         let digits = max.len();
         let cur = format!("{:>width$}", cur, width = digits);
-        format!("{spinner}{percent} {filled}{empty} {cur}/{max} ")
+        format!("{spinner}{percent} {filled}{empty} {cur} / {max} ")
     }
 
     /// Spawn thread that draws at consistent fps

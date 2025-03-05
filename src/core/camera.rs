@@ -102,7 +102,6 @@ impl CameraBuilder {
         let image_width = image_height * aspect_ratio;
 
         let samples_per_pixel = self.samples_per_pixel;
-        let pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
 
         let max_depth = self.max_depth;
 
@@ -157,7 +156,6 @@ impl CameraBuilder {
             image_width,
             image_height,
             samples_per_pixel,
-            pixel_samples_scale,
             max_depth,
             center,
             pixel_00,
@@ -175,7 +173,6 @@ pub struct Camera {
     image_width: f64,
     image_height: f64,
     samples_per_pixel: u32,
-    pixel_samples_scale: f64,
     max_depth: u32,
     center: Vec3,
     pixel_00: Vec3,
@@ -220,7 +217,7 @@ impl Camera {
                         pixel_vec3 += Vec3::from(color);
                     }
 
-                    let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
+                    let pixel_vec3 = pixel_vec3 / self.samples_per_pixel as f64;
 
                     // assign pixel color to output pixel at index
                     *pixel = Color::from(pixel_vec3);

@@ -63,8 +63,10 @@ impl Progress {
 
         let percent = format!("{percent:>3}%");
 
-        let digits = max.to_string().len();
-        let cur = format!("{:digits$}", cur, digits = digits);
+        let cur = format_number(cur);
+        let max = format_number(max);
+        let digits = max.len();
+        let cur = format!("{:>width$}", cur, width = digits);
         format!("{spinner}{percent} {filled}{empty} {cur}/{max} ")
     }
 
@@ -99,3 +101,18 @@ impl Progress {
 }
 
 const SPINNER_CHARS: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+fn format_number(value: usize) -> String {
+    let value_str = value.to_string();
+
+    let chars: Vec<char> = value_str.chars().rev().collect();
+
+    chars
+        .chunks(3)
+        .map(|chunk| chunk.iter().rev().collect::<String>())
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>()
+        .join(",")
+}

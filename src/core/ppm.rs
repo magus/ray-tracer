@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::core::Color;
 
 /// https://en.wikipedia.org/wiki/Netpbm
@@ -37,14 +39,20 @@ pub struct V3 {
 }
 
 impl V3 {
-    pub fn save(&self, filepath: &str) {
-        dbg!(filepath);
+    pub async fn save(&self, filepath: &str) -> Result<(), std::io::Error> {
+        let file = std::fs::File::create(filepath)?;
+        let mut writer = std::io::BufWriter::new(file);
 
-        println!("P3");
-        println!("{} {}", self.width, self.height);
-        println!("{}", Color::MAX_VALUE);
+        writeln!(writer, "P3")?;
+        writeln!(writer, "{} {}", self.width, self.height)?;
+        writeln!(writer, "{}", Color::MAX_VALUE)?;
+
         for pixel in &self.pixels {
-            println!("{pixel}");
+            writeln!(writer, "{pixel}")?;
         }
+
+        writer.flush()?;
+
+        Ok(())
     }
 }

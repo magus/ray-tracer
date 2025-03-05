@@ -2,14 +2,14 @@
 
 ```bash
 # debug
-time (rm -f img.ppm && cargo run > img.ppm)
+time cargo run
 
 # release
 cargo build --release
-time (rm -f img.ppm && ./target/release/ray-tracer > img.ppm)
+time ./target/release/ray-tracer
 
 # one command release build render
-cargo build --release && time (rm -f img.ppm && ./target/release/ray-tracer > img.ppm)
+cargo build --release && time ./target/release/ray-tracer
 
 # test
 cargo test

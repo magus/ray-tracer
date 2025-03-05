@@ -8,7 +8,8 @@ use ray_tracer::geo::HittableList;
 use ray_tracer::geo::Sphere;
 use ray_tracer::geo::Vec3;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut world = HittableList::new();
 
     let ground_radius = 1000.0;
@@ -134,12 +135,15 @@ fn main() {
     // camera.debug(&world, 100, 200);
     let pixels = camera.render(&world);
 
-    (ppm::V3 {
+    let ppm = ppm::V3 {
         width: camera.image_width(),
         height: camera.image_height(),
         pixels,
-    })
-    .save("image.ppm");
+    };
+
+    if let Err(error) = ppm.save("image.ppm").await {
+        eprintln!("{error}");
+    };
 }
 
 struct RandomSphereParams {

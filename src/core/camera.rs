@@ -1,3 +1,4 @@
+use crate::core::ppm;
 use crate::core::random_f64;
 use crate::core::Color;
 use crate::core::Progress;
@@ -195,7 +196,14 @@ impl Camera {
         eprintln!("color={:?}", color);
     }
 
-    pub fn render<T: Hittable>(&self, world: &T, pixels: &mut Vec<Color>) {
+    pub async fn render<T: Hittable>(&self, world: &T) {
+        let width = self.image_width();
+        let height = self.image_height();
+
+        // pre-allocate vector with correct pixel array size
+        let pixel_count = width * height;
+        let mut pixels: Vec<Color> = vec![Color::new(0.0, 0.0, 0.0); pixel_count];
+
         // wrap render in block so it drops progress thread correctly
         // printing the final progress bar update before saved message
         {
@@ -206,8 +214,8 @@ impl Camera {
                 .par_iter_mut()
                 .enumerate()
                 .for_each(|(index, pixel)| {
-                    let y = (index / self.image_width()) as u32;
-                    let x = (index % self.image_width()) as u32;
+                    let y = (index / width) as u32;
+                    let x = (index % width) as u32;
 
                     let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
 
@@ -226,6 +234,16 @@ impl Camera {
                     progress.inc();
                 });
         }
+
+        let ppm = ppm::V3 {
+            width,
+            height,
+            pixels,
+        };
+
+        if let Err(error) = ppm.save("image.ppm").await {
+            eprintln!("{error}");
+        };
     }
 
     pub fn image_width(&self) -> usize {

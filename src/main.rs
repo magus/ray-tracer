@@ -1,4 +1,3 @@
-use ray_tracer::core::ppm;
 use ray_tracer::core::random_f64;
 use ray_tracer::core::random_f64_range;
 use ray_tracer::core::Camera;
@@ -132,22 +131,8 @@ async fn main() {
         .focus_distance(10.0)
         .initialize();
 
-    // pre-allocate vector with correct pixel array size
-    let pixel_count = camera.image_width() * camera.image_height();
-    let mut pixels: Vec<Color> = vec![Color::new(0.0, 0.0, 0.0); pixel_count];
-
     // camera.debug(&world, 100, 200);
-    camera.render(&world, &mut pixels);
-
-    let ppm = ppm::V3 {
-        width: camera.image_width(),
-        height: camera.image_height(),
-        pixels,
-    };
-
-    if let Err(error) = ppm.save("image.ppm").await {
-        eprintln!("{error}");
-    };
+    camera.render(&world).await;
 }
 
 struct RandomSphereParams {

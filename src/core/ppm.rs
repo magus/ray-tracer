@@ -40,7 +40,9 @@ pub struct V3 {
 
 impl V3 {
     pub async fn save(&self, filepath: &str) -> Result<(), std::io::Error> {
-        let file = std::fs::File::create(filepath)?;
+        let tmp_filepath = format!("{filepath}.tmp");
+
+        let file = std::fs::File::create(&tmp_filepath)?;
         let mut writer = std::io::BufWriter::new(file);
 
         writeln!(writer, "P3")?;
@@ -52,6 +54,9 @@ impl V3 {
         }
 
         writer.flush()?;
+
+        // rename tmp to target filepath for fast atomic operation
+        std::fs::rename(tmp_filepath, filepath)?;
 
         Ok(())
     }

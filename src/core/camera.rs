@@ -1,3 +1,9 @@
+use rayon::prelude::*;
+use std::sync::mpsc;
+use std::sync::Arc;
+use std::sync::RwLock;
+use tokio::time;
+
 use crate::core::ppm;
 use crate::core::random_f64;
 use crate::core::Color;
@@ -8,7 +14,6 @@ use crate::geo::Hittable;
 use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
-use rayon::prelude::*;
 
 pub struct CameraBuilder {
     aspect_ratio: f64,
@@ -201,49 +206,58 @@ impl Camera {
         let height = self.image_height();
 
         // pre-allocate vector with correct pixel array size
-        let pixel_count = width * height;
-        let mut pixels: Vec<Color> = vec![Color::new(0.0, 0.0, 0.0); pixel_count];
+        // wrap with RwLock to allow shared access across threads
+        let pixels = Arc::new(RwLock::new(vec![Color::new(0.0, 0.0, 0.0); width * height]));
+
+        // channel + thread to aggregate pixel updates
+        let pixels_aggregator = Arc::clone(&pixels);
+        let (tx, rx) = mpsc::channel::<(usize, Color)>();
+        let aggregator = tokio::spawn(async move {
+            while let Ok((index, color)) = rx.recv() {
+                let mut pixels = pixels_aggregator.write().unwrap();
+                pixels[index] = color;
+            }
+        });
+
+        // spawn background thrad to save periodically
+        let pixels_saver = Arc::clone(&pixels);
+        let saver = tokio::spawn(async move {
+            let mut timer = time::interval(time::Duration::from_secs(2));
+            loop {
+                timer.tick().await;
+                let pixels = pixels_saver.read().unwrap().clone();
+                save_ppm(width, height, &pixels, false).await;
+            }
+        });
 
         // wrap render in block so it drops progress thread correctly
         // printing the final progress bar update before saved message
-        {
-            let progress = Progress::new(pixels.len());
-            let _progress_thread = progress.render(15);
+        let progress = Progress::new(pixels.read().unwrap().len());
+        let progress = progress.render(15);
 
-            pixels
-                .par_iter_mut()
-                .enumerate()
-                .for_each(|(index, pixel)| {
-                    let y = (index / width) as u32;
-                    let x = (index % width) as u32;
+        (0..width * height).into_par_iter().for_each(|index| {
+            let y = (index / width) as u32;
+            let x = (index % width) as u32;
 
-                    let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
+            // calculate pixel and send to aggregator channel
+            let pixel = self.get_pixel(world, x, y);
+            tx.send((index, pixel)).unwrap();
 
-                    for _sample in 0..self.samples_per_pixel {
-                        let ray = self.get_ray(x, y);
-                        let color = ray_color(&ray, world, self.max_depth);
-                        pixel_vec3 += Vec3::from(color);
-                    }
+            // pixel done, update progress
+            progress.inc();
+        });
 
-                    let pixel_vec3 = pixel_vec3 / self.samples_per_pixel as f64;
+        // close channel and wait for aggregator to finish
+        drop(tx);
+        aggregator.await.unwrap();
+        saver.abort();
 
-                    // assign pixel color to output pixel at index
-                    *pixel = Color::from(pixel_vec3);
+        // print progress one last time
+        drop(progress);
 
-                    // row done, update progress
-                    progress.inc();
-                });
-        }
-
-        let ppm = ppm::V3 {
-            width,
-            height,
-            pixels,
-        };
-
-        if let Err(error) = ppm.save("image.ppm").await {
-            eprintln!("{error}");
-        };
+        // one last save
+        let pixels = pixels.read().unwrap().clone();
+        save_ppm(width, height, &pixels, true).await;
     }
 
     pub fn image_width(&self) -> usize {
@@ -252,6 +266,20 @@ impl Camera {
 
     pub fn image_height(&self) -> usize {
         self.image_height as usize
+    }
+
+    fn get_pixel<T: Hittable>(&self, world: &T, x: u32, y: u32) -> Color {
+        let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
+
+        for _sample in 0..self.samples_per_pixel {
+            let ray = self.get_ray(x, y);
+            let color = ray_color(&ray, world, self.max_depth);
+            pixel_vec3 += Vec3::from(color);
+        }
+
+        let pixel_vec3 = pixel_vec3 / self.samples_per_pixel as f64;
+
+        Color::from(pixel_vec3)
     }
 
     fn get_ray(&self, x: u32, y: u32) -> Ray {
@@ -320,4 +348,24 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: u32) -> Color {
 fn sample_square() -> Point3 {
     // random point in the [-0.5,-0.5] [+0.5,+0.5] unit square
     Point3::new(random_f64() - 0.5, random_f64() - 0.5, 0.0)
+}
+
+async fn save_ppm(width: usize, height: usize, pixels: &Vec<Color>, last: bool) {
+    let timer = time::Instant::now();
+
+    let ppm = ppm::V3 {
+        width,
+        height,
+        pixels: pixels.clone(),
+    };
+
+    if let Err(error) = ppm.save("image.ppm").await {
+        eprintln!("{error}");
+    };
+
+    if !last {
+        // carriage return and clear line from cursor to end
+        eprint!("\r\x1b[K");
+        eprintln!("saved ({:?})", timer.elapsed());
+    }
 }

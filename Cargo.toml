@@ -6,7 +6,12 @@ edition = "2021"
 [dependencies]
 rand = "0.9.0"
 rayon = "1.10.0"
-tokio = { version = "1.43.0", features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { version = "1.43.0", features = [
+  "macros",
+  "rt",
+  "rt-multi-thread",
+  "time",
+] }
 
 [profile.release]
 opt-level = 3     # maximum optimization

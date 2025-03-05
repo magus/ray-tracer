@@ -198,49 +198,37 @@ impl Camera {
         eprintln!("color={:?}", color);
     }
 
-    pub fn render<T: Hittable>(&self, world: &T) -> Vec<Color> {
-        let y_max = self.image_height as u32;
-        let x_max = self.image_width as u32;
-
-        // pre-allocate vector with correct pixel array size
-        let pixel_count = (x_max * y_max) as usize;
-        let mut pixels: Vec<Color> = vec![Color::new(0.0, 0.0, 0.0); pixel_count];
-
+    pub fn render<T: Hittable>(&self, world: &T, pixels: &mut Vec<Color>) {
         // wrap render in block so it drops progress thread correctly
         // printing the final progress bar update before saved message
         {
-            let progress = Progress::new(y_max);
+            let progress = Progress::new(pixels.len());
             let _progress_thread = progress.render(15);
 
             pixels
-                .par_chunks_mut(x_max as usize)
+                .par_iter_mut()
                 .enumerate()
-                .for_each(|(y, pixel_row)| {
-                    let y = y as u32;
+                .for_each(|(index, pixel)| {
+                    let y = (index / self.image_width()) as u32;
+                    let x = (index % self.image_width()) as u32;
 
-                    for x in 0..x_max {
-                        let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
+                    let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
 
-                        for _sample in 0..self.samples_per_pixel {
-                            let ray = self.get_ray(x, y);
-                            let color = ray_color(&ray, world, self.max_depth);
-                            pixel_vec3 += Vec3::from(color);
-                        }
-
-                        let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
-                        let pixel = Color::from(pixel_vec3);
-
-                        pixel_row[x as usize] = Color::from(pixel);
+                    for _sample in 0..self.samples_per_pixel {
+                        let ray = self.get_ray(x, y);
+                        let color = ray_color(&ray, world, self.max_depth);
+                        pixel_vec3 += Vec3::from(color);
                     }
+
+                    let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
+
+                    // assign pixel color to output pixel at index
+                    *pixel = Color::from(pixel_vec3);
 
                     // row done, update progress
                     progress.inc();
                 });
         }
-
-        eprintln!();
-
-        pixels
     }
 
     pub fn image_width(&self) -> usize {

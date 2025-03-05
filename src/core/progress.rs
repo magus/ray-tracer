@@ -6,8 +6,8 @@ use std::{
 
 #[derive(Debug)]
 pub struct State {
-    cur: atomic::AtomicU32,
-    max: u32,
+    cur: atomic::AtomicUsize,
+    max: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -24,20 +24,21 @@ impl Drop for ProgressThread {
         if let Some(join_handle) = self.join_handle.take() {
             join_handle.join().unwrap();
         }
+        eprintln!();
     }
 }
 
 impl Progress {
-    pub fn new(max: u32) -> Self {
+    pub fn new(max: usize) -> Self {
         let state = Arc::new(State {
-            cur: atomic::AtomicU32::new(0),
+            cur: atomic::AtomicUsize::new(0),
             max,
         });
 
         Progress { state }
     }
 
-    pub fn inc(&self) -> u32 {
+    pub fn inc(&self) -> usize {
         self.state.cur.fetch_add(1, atomic::Ordering::Relaxed) + 1
     }
 

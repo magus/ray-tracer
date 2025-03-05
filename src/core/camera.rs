@@ -8,23 +8,6 @@ use crate::geo::Point3;
 use crate::geo::Ray;
 use crate::geo::Vec3;
 use rayon::prelude::*;
-use std::io::Write;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Camera {
-    image_width: f64,
-    image_height: f64,
-    samples_per_pixel: u32,
-    pixel_samples_scale: f64,
-    max_depth: u32,
-    center: Vec3,
-    pixel_00: Vec3,
-    pixel_delta_u: Vec3,
-    pixel_delta_v: Vec3,
-    defocus_angle: f64,
-    defocus_disk_u: Vec3,
-    defocus_disk_v: Vec3,
-}
 
 pub struct CameraBuilder {
     aspect_ratio: f64,
@@ -187,6 +170,22 @@ impl CameraBuilder {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Camera {
+    image_width: f64,
+    image_height: f64,
+    samples_per_pixel: u32,
+    pixel_samples_scale: f64,
+    max_depth: u32,
+    center: Vec3,
+    pixel_00: Vec3,
+    pixel_delta_u: Vec3,
+    pixel_delta_v: Vec3,
+    defocus_angle: f64,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
+}
+
 impl Camera {
     pub fn new() -> CameraBuilder {
         CameraBuilder::new()
@@ -199,18 +198,13 @@ impl Camera {
         eprintln!("color={:?}", color);
     }
 
-    pub fn render<T: Hittable>(&self, world: &T) {
+    pub fn render<T: Hittable>(&self, world: &T) -> Vec<Color> {
         let y_max = self.image_height as u32;
         let x_max = self.image_width as u32;
-        let max_value = 255;
 
-        // buffer output
-        let stdout = std::io::stdout();
-        let mut out = std::io::BufWriter::new(stdout.lock());
-
-        writeln!(out, "P3").unwrap();
-        writeln!(out, "{x_max} {y_max}").unwrap();
-        writeln!(out, "{max_value}").unwrap();
+        // pre-allocate vector with correct pixel array size
+        let pixel_count = (x_max * y_max) as usize;
+        let mut pixels: Vec<Color> = vec![Color::new(0.0, 0.0, 0.0); pixel_count];
 
         // wrap render in block so it drops progress thread correctly
         // printing the final progress bar update before saved message
@@ -218,10 +212,11 @@ impl Camera {
             let progress = Progress::new(y_max);
             let _progress_thread = progress.render(15);
 
-            let rows: Vec<String> = (0..y_max)
-                .into_par_iter()
-                .map(|y| {
-                    let mut row = String::new();
+            pixels
+                .par_chunks_mut(x_max as usize)
+                .enumerate()
+                .for_each(|(y, pixel_row)| {
+                    let y = y as u32;
 
                     for x in 0..x_max {
                         let mut pixel_vec3 = Vec3::from(Color::new(0.0, 0.0, 0.0));
@@ -234,27 +229,26 @@ impl Camera {
 
                         let pixel_vec3 = pixel_vec3 * self.pixel_samples_scale;
                         let pixel = Color::from(pixel_vec3);
-                        row.push_str(&format!("{pixel}\n"));
+
+                        pixel_row[x as usize] = Color::from(pixel);
                     }
 
                     // row done, update progress
                     progress.inc();
-
-                    row
-                })
-                .collect();
-
-            // write rows out in order
-            for row in rows {
-                write!(out, "{}", row).unwrap();
-            }
-
-            // flush buffer to stdout
-            out.flush().unwrap();
+                });
         }
 
         eprintln!();
-        eprintln!("saved");
+
+        pixels
+    }
+
+    pub fn image_width(&self) -> usize {
+        self.image_width as usize
+    }
+
+    pub fn image_height(&self) -> usize {
+        self.image_height as usize
     }
 
     fn get_ray(&self, x: u32, y: u32) -> Ray {

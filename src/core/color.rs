@@ -6,6 +6,8 @@ use crate::geo::Vec3;
 pub struct Color(Vec3);
 
 impl Color {
+    pub const MAX_VALUE: u32 = 255;
+
     pub fn new(rf: f64, gf: f64, bf: f64) -> Self {
         Color(Vec3::new(rf, gf, bf))
     }

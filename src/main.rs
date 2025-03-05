@@ -1,3 +1,4 @@
+use ray_tracer::core::ppm;
 use ray_tracer::core::random_f64;
 use ray_tracer::core::random_f64_range;
 use ray_tracer::core::Camera;
@@ -117,6 +118,9 @@ fn main() {
     let camera = Camera::new()
         .aspect_ratio(16.0 / 9.0)
         .image_height(1080)
+        // .image_height(540)
+        // .image_height(270)
+        // .image_height(100)
         .samples_per_pixel(10)
         .max_depth(50)
         .vertical_fov(20.0)
@@ -128,7 +132,14 @@ fn main() {
         .initialize();
 
     // camera.debug(&world, 100, 200);
-    camera.render(&world);
+    let pixels = camera.render(&world);
+
+    (ppm::V3 {
+        width: camera.image_width(),
+        height: camera.image_height(),
+        pixels,
+    })
+    .save("image.ppm");
 }
 
 struct RandomSphereParams {

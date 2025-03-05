@@ -1,3 +1,5 @@
+use crate::core::Color;
+
 /// https://en.wikipedia.org/wiki/Netpbm
 /// Portable PixMap (P3)
 ///
@@ -27,4 +29,22 @@
 /// 255 255 255
 ///   0   0   0
 /// ```
-pub fn v3() {}
+#[derive(Clone, Debug, PartialEq)]
+pub struct V3 {
+    pub width: usize,
+    pub height: usize,
+    pub pixels: Vec<Color>,
+}
+
+impl V3 {
+    pub fn save(&self, filepath: &str) {
+        dbg!(filepath);
+
+        println!("P3");
+        println!("{} {}", self.width, self.height);
+        println!("{}", Color::MAX_VALUE);
+        for pixel in &self.pixels {
+            println!("{pixel}");
+        }
+    }
+}
